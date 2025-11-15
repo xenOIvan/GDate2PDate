@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GDate2PDate Test Page | صفحه تست تبدیل تاریخ</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .section h2 {
+            color: #764ba2;
+            margin-top: 0;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .date-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+        .date-item strong {
+            color: #764ba2;
+            display: inline-block;
+            min-width: 150px;
+        }
+        .date-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .instruction {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+            margin-bottom: 20px;
+        }
+        .instruction h3 {
+            margin-top: 0;
+            color: #1976D2;
+        }
+        .success-indicator {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
+        .dynamic-dates {
+            min-height: 100px;
+        }
+        #addDateBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        #addDateBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 GDate2PDate Extension Test Page</h1>
+        <p class="subtitle">صفحه تست افزونه تبدیل تاریخ میلادی به شمسی</p>
+
+        <div class="instruction">
+            <h3>📌 دستورالعمل | Instructions</h3>
+            <p><strong>فارسی:</strong> پس از نصب افزونه، تمام تاریخ‌های میلادی در این صفحه باید به صورت خودکار به تاریخ شمسی تبدیل شوند.</p>
+            <p><strong>English:</strong> After installing the extension, all Gregorian dates on this page should automatically convert to Jalali dates.</p>
+        </div>
+
+        <div class="success-indicator">
+            ✅ اگر تاریخ‌های زیر به فرمت شمسی (مثل 1403/08/26) نمایش داده می‌شوند، افزونه به درستی کار می‌کند!
+            <br>
+            ✅ If the dates below show in Jalali format (like 1403/08/26), the extension is working correctly!
+        </div>
+
+        <!-- ISO Format Dates -->
+        <div class="section">
+            <h2>ISO Format (YYYY-MM-DD)</h2>
+            <div class="date-item">
+                <strong>Today:</strong>
+                <span class="date-value">2024-11-16</span>
+            </div>
+            <div class="date-item">
+                <strong>New Year 2024:</strong>
+                <span class="date-value">2024-01-01</span>
+            </div>
+            <div class="date-item">
+                <strong>Past Date:</strong>
+                <span class="date-value">2020-03-20</span>
+            </div>
+            <div class="date-item">
+                <strong>Future Date:</strong>
+                <span class="date-value">2025-12-31</span>
+            </div>
+        </div>
+
+        <!-- US Format Dates -->
+        <div class="section">
+            <h2>US Format (MM/DD/YYYY)</h2>
+            <div class="date-item">
+                <strong>Today:</strong>
+                <span class="date-value">11/16/2024</span>
+            </div>
+            <div class="date-item">
+                <strong>Independence Day:</strong>
+                <span class="date-value">07/04/2024</span>
+            </div>
+            <div class="date-item">
+                <strong>Christmas:</strong>
+                <span class="date-value">12/25/2024</span>
+            </div>
+        </div>
+
+        <!-- European Format Dates -->
+        <div class="section">
+            <h2>European Format (DD/MM/YYYY)</h2>
+            <div class="date-item">
+                <strong>Today:</strong>
+                <span class="date-value">16/11/2024</span>
+            </div>
+            <div class="date-item">
+                <strong>Valentine's Day:</strong>
+                <span class="date-value">14/02/2024</span>
+            </div>
+        </div>
+
+        <!-- Dates with Time -->
+        <div class="section">
+            <h2>Dates with Time</h2>
+            <div class="date-item">
+                <strong>Now:</strong>
+                <span class="date-value">2024-11-16 14:30:45</span>
+            </div>
+            <div class="date-item">
+                <strong>Meeting Time:</strong>
+                <span class="date-value">2024-11-20 09:00:00</span>
+            </div>
+            <div class="date-item">
+                <strong>Deadline:</strong>
+                <span class="date-value">12/31/2024 23:59:59</span>
+            </div>
+        </div>
+
+        <!-- Textual Dates -->
+        <div class="section">
+            <h2>Textual Dates (Month Names)</h2>
+            <div class="date-item">
+                <strong>Full Format:</strong>
+                <span class="date-value">November 16, 2024</span>
+            </div>
+            <div class="date-item">
+                <strong>Short Format:</strong>
+                <span class="date-value">16 Nov 2024</span>
+            </div>
+            <div class="date-item">
+                <strong>Month Day:</strong>
+                <span class="date-value">Nov 16</span>
+            </div>
+            <div class="date-item">
+                <strong>Day Month:</strong>
+                <span class="date-value">16 November</span>
+            </div>
+            <div class="date-item">
+                <strong>Historical:</strong>
+                <span class="date-value">September 16, 1961</span>
+            </div>
+        </div>
+
+        <!-- Standalone Months -->
+        <div class="section">
+            <h2>Standalone Month Names</h2>
+            <div class="date-item">
+                <strong>Full Name:</strong>
+                <span class="date-value">November</span>
+            </div>
+            <div class="date-item">
+                <strong>Short Name:</strong>
+                <span class="date-value">Nov</span>
+            </div>
+            <div class="date-item">
+                <strong>In Sentence:</strong>
+                The meeting is scheduled for <span class="date-value">December</span> this year.
+            </div>
+        </div>
+
+        <!-- Dynamic Content Test -->
+        <div class="section">
+            <h2>Dynamic Content Test (AJAX Simulation)</h2>
+            <p>Click the button to add new dates dynamically:</p>
+            <button id="addDateBtn">➕ Add New Date | اضافه کردن تاریخ جدید</button>
+            <div class="dynamic-dates" id="dynamicDates"></div>
+        </div>
+
+        <!-- Mixed Content -->
+        <div class="section">
+            <h2>Mixed Content Test</h2>
+            <p>
+                The project started on <span class="date-value">2024-01-15</span> and the first release 
+                was on <span class="date-value">March 20, 2024</span>. The deadline is 
+                <span class="date-value">12/31/2024</span>.
+            </p>
+            <p>
+                پروژه در تاریخ <span class="date-value">2024-01-15</span> شروع شد و اولین نسخه در 
+                <span class="date-value">20 March 2024</span> منتشر شد.
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        // Dynamic date addition test
+        // تست اضافه کردن تاریخ به صورت پویا
+        let dateCounter = 0;
+        document.getElementById('addDateBtn').addEventListener('click', function() {
+            dateCounter++;
+            const dynamicDates = document.getElementById('dynamicDates');
+            
+            // Generate a random date
+            const year = 2020 + Math.floor(Math.random() * 5);
+            const month = 1 + Math.floor(Math.random() * 12);
+            const day = 1 + Math.floor(Math.random() * 28);
+            
+            const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            
+            const newDateItem = document.createElement('div');
+            newDateItem.className = 'date-item';
+            newDateItem.innerHTML = `<strong>Dynamic Date #${dateCounter}:</strong> <span class="date-value">${dateStr}</span>`;
+            
+            dynamicDates.appendChild(newDateItem);
+            
+            console.log('Added new dynamic date:', dateStr);
+        });
+
+        // Log page load for testing
+        console.log('GDate2PDate Test Page loaded at:', new Date().toISOString());
+    </script>
+</body>
+</html>
