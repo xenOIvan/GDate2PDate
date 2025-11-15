@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تبدیل تاریخ میلادی به شمسی</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 320px;
+      min-height: 200px;
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 0;
+      direction: rtl;
+    }
+
+    .container {
+      background: white;
+      border-radius: 0;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .header p {
+      font-size: 11px;
+      opacity: 0.9;
+      direction: ltr;
+      margin-top: 3px;
+    }
+
+    .icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .toggle-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .toggle-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .toggle-label-en {
+      font-size: 11px;
+      color: #666;
+      direction: ltr;
+      margin-top: 3px;
+    }
+
+    /* Toggle Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .3s;
+      border-radius: 26px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
+    .status {
+      text-align: center;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 15px;
+    }
+
+    .status.enabled {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status.disabled {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .info {
+      background: #e7f3ff;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #004085;
+      line-height: 1.6;
+      border-right: 3px solid #667eea;
+    }
+
+    .info strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 15px;
+      border-top: 1px solid #e9ecef;
+      font-size: 11px;
+      color: #666;
+    }
+
+    .footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    .version {
+      margin-top: 5px;
+      font-size: 10px;
+      color: #999;
+    }
+
+    /* Persian/Arabic font support */
+    @font-face {
+      font-family: 'Iranian Sans';
+      src: local('Tahoma'), local('Arial');
+    }
+
+    body, .toggle-label, .status, .info {
+      font-family: 'Iranian Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="icon">📅</div>
+      <h1>تبدیل تاریخ میلادی به شمسی</h1>
+      <p>GDate2PDate - Gregorian to Jalali</p>
+    </div>
+
+    <div class="content">
+      <div class="status" id="status">
+        <span id="statusText">در حال بارگذاری...</span>
+      </div>
+
+      <div class="toggle-section">
+        <div>
+          <div class="toggle-label">وضعیت افزونه</div>
+          <div class="toggle-label-en">Extension Status</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggleSwitch">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="info">
+        <strong>📌 نکته:</strong>
+        پس از تغییر وضعیت، صفحات باز شده به صورت خودکار بارگذاری می‌شوند تا تغییرات اعمال شود.
+        <br><br>
+        <strong>ℹ️ Note:</strong>
+        After changing status, open pages will reload automatically to apply changes.
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        ساخته شده با ❤️ برای کاربران فارسی‌زبان
+        <br>
+        Made with ❤️ for Persian speakers
+      </div>
+      <div class="version">نسخه 1.0.0 | Version 1.0.0</div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
