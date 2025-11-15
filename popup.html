@@ -3,239 +3,174 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تبدیل تاریخ میلادی به شمسی</title>
+  <title>GDate2PDate Extension</title>
   <style>
-    * {
+    body {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      width: 320px;
-      min-height: 200px;
+      width: 280px;
+      min-height: 320px;
       font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 0;
-      direction: rtl;
+      color: #2d3748;
+      overflow: hidden;
     }
 
     .container {
-      background: white;
-      border-radius: 0;
+      padding: 20px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
     .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 20px;
       text-align: center;
+      margin-bottom: 8px;
     }
 
-    .header h1 {
-      font-size: 18px;
-      margin-bottom: 5px;
-      font-weight: 600;
+    .title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #ffffff;
+      margin: 0 0 4px 0;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
 
-    .header p {
-      font-size: 11px;
+    .subtitle {
+      font-size: 12px;
+      color: #e2e8f0;
+      margin: 0;
       opacity: 0.9;
-      direction: ltr;
-      margin-top: 3px;
     }
 
-    .icon {
-      font-size: 32px;
-      margin-bottom: 10px;
+    .status-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
     }
 
-    .content {
-      padding: 20px;
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .status-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: #4a5568;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #48bb78;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.disabled {
+      background-color: #e53e3e;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
 
     .toggle-section {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      margin-bottom: 15px;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-top: 1px solid #e2e8f0;
     }
 
     .toggle-label {
       font-size: 14px;
+      color: #2d3748;
       font-weight: 500;
-      color: #333;
     }
 
-    .toggle-label-en {
-      font-size: 11px;
-      color: #666;
-      direction: ltr;
-      margin-top: 3px;
-    }
-
-    /* Toggle Switch */
-    .switch {
+    .toggle-switch {
       position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 26px;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
+      width: 48px;
+      height: 24px;
+      background-color: #cbd5e0;
+      border-radius: 12px;
       cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: .3s;
-      border-radius: 26px;
+      transition: background-color 0.3s ease;
     }
 
-    .slider:before {
+    .toggle-switch.active {
+      background-color: #4299e1;
+    }
+
+    .toggle-slider {
       position: absolute;
-      content: "";
-      height: 20px;
+      top: 2px;
+      right: 2px;
       width: 20px;
-      left: 3px;
-      bottom: 3px;
+      height: 20px;
       background-color: white;
-      transition: .3s;
       border-radius: 50%;
+      transition: transform 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
-    input:checked + .slider {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .toggle-switch.active .toggle-slider {
+      transform: translateX(-24px);
     }
 
-    input:checked + .slider:before {
-      transform: translateX(24px);
-    }
-
-    .status {
-      text-align: center;
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 13px;
-      margin-bottom: 15px;
-    }
-
-    .status.enabled {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-
-    .status.disabled {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-
-    .info {
-      background: #e7f3ff;
+    .info-section {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
       padding: 12px;
-      border-radius: 6px;
       font-size: 12px;
-      color: #004085;
-      line-height: 1.6;
-      border-right: 3px solid #667eea;
-    }
-
-    .info strong {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 13px;
+      color: #4a5568;
+      line-height: 1.4;
+      text-align: center;
     }
 
     .footer {
+      margin-top: auto;
       text-align: center;
-      padding: 15px;
-      border-top: 1px solid #e9ecef;
-      font-size: 11px;
-      color: #666;
-    }
-
-    .footer a {
-      color: #667eea;
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
-
-    .version {
-      margin-top: 5px;
       font-size: 10px;
-      color: #999;
-    }
-
-    /* Persian/Arabic font support */
-    @font-face {
-      font-family: 'Iranian Sans';
-      src: local('Tahoma'), local('Arial');
-    }
-
-    body, .toggle-label, .status, .info {
-      font-family: 'Iranian Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
+      color: rgba(255, 255, 255, 0.7);
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="icon">📅</div>
-      <h1>تبدیل تاریخ میلادی به شمسی</h1>
-      <p>GDate2PDate - Gregorian to Jalali</p>
+      <h1 class="title">GDate2PDate</h1>
+      <p class="subtitle">تبدیل تاریخ میلادی به شمسی</p>
     </div>
-
-    <div class="content">
-      <div class="status" id="status">
-        <span id="statusText">در حال بارگذاری...</span>
+    <div class="status-card">
+      <div class="status-indicator">
+        <span class="status-text" id="status-text">وضعیت: فعال</span>
+        <div class="status-dot" id="status-dot"></div>
       </div>
-
       <div class="toggle-section">
-        <div>
-          <div class="toggle-label">وضعیت افزونه</div>
-          <div class="toggle-label-en">Extension Status</div>
+        <label class="toggle-label">تبدیل خودکار تاریخ</label>
+        <div class="toggle-switch active" id="toggle-switch">
+          <div class="toggle-slider"></div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="toggleSwitch">
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <div class="info">
-        <strong>📌 نکته:</strong>
-        پس از تغییر وضعیت، تب فعلی به صورت خودکار بارگذاری می‌شود تا تغییرات اعمال شود.
-        <br><br>
-        <strong>ℹ️ Note:</strong>
-        After changing status, the current tab will reload automatically to apply changes.
       </div>
     </div>
-
+    <div class="info-section">
+      این افزونه به طور خودکار تاریخ‌های میلادی را در صفحات وب به تاریخ شمسی تبدیل می‌کند
+    </div>
     <div class="footer">
-      <div>
-        ساخته شده با ❤️ برای کاربران فارسی‌زبان
-        <br>
-        Made with ❤️ for Persian speakers
-      </div>
-      <div class="version">نسخه 1.0.0 | Version 1.0.0</div>
+      نسخه 1.0.0 | Made with ❤️
     </div>
   </div>
-
   <script src="popup.js"></script>
 </body>
 </html>

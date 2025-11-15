@@ -6,23 +6,23 @@
 (function() {
   'use strict';
 
-  const toggleSwitch = document.getElementById('toggleSwitch');
-  const statusElement = document.getElementById('status');
-  const statusText = document.getElementById('statusText');
+  const toggleSwitch = document.getElementById('toggle-switch');
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
 
   /**
    * Update UI based on extension state
    * به‌روزرسانی رابط کاربری بر اساس وضعیت افزونه
    */
   function updateUI(enabled) {
-    toggleSwitch.checked = enabled;
-    
     if (enabled) {
-      statusElement.className = 'status enabled';
-      statusText.textContent = '✅ فعال | Enabled';
+      toggleSwitch.classList.add('active');
+      statusDot.classList.remove('disabled');
+      statusText.textContent = 'وضعیت: فعال';
     } else {
-      statusElement.className = 'status disabled';
-      statusText.textContent = '❌ غیرفعال | Disabled';
+      toggleSwitch.classList.remove('active');
+      statusDot.classList.add('disabled');
+      statusText.textContent = 'وضعیت: غیرفعال';
     }
   }
 
@@ -43,26 +43,27 @@
    * مدیریت تغییر سوئیچ فعال/غیرفعال
    */
   function handleToggle() {
-    const enabled = toggleSwitch.checked;
+    const enabled = toggleSwitch.classList.contains('active');
+    const newState = !enabled;
     
-    console.log('GDate2PDate Popup: Toggle changed to:', enabled ? 'enabled' : 'disabled');
+    console.log('GDate2PDate Popup: Toggle changed to:', newState ? 'enabled' : 'disabled');
     
     // Update storage
     // به‌روزرسانی ذخیره‌سازی
-    chrome.storage.sync.set({ enabled: enabled }, function() {
+    chrome.storage.sync.set({ enabled: newState }, function() {
       if (chrome.runtime.lastError) {
         console.error('GDate2PDate Popup: Error saving state:', chrome.runtime.lastError);
         return;
       }
       
       console.log('GDate2PDate Popup: State saved successfully');
-      updateUI(enabled);
+      updateUI(newState);
       
       // Send message to background script
       // ارسال پیام به اسکریپت پس‌زمینه
       chrome.runtime.sendMessage({
         action: 'toggle',
-        enabled: enabled,
+        enabled: newState,
         reloadTabs: true
       }, function(response) {
         if (chrome.runtime.lastError) {
@@ -75,7 +76,7 @@
           
           // Show a brief confirmation (optional)
           // نمایش تأیید کوتاه (اختیاری)
-          showConfirmation(enabled);
+          showConfirmation(newState);
         }
       });
     });
@@ -89,9 +90,9 @@
     const originalText = statusText.textContent;
     
     if (enabled) {
-      statusText.textContent = '✅ فعال شد! تب در حال بارگذاری... | Enabled! Reloading tab...';
+      statusText.textContent = 'تب در حال بارگذاری...';
     } else {
-      statusText.textContent = '❌ غیرفعال شد! تب در حال بارگذاری... | Disabled! Reloading tab...';
+      statusText.textContent = 'تب در حال بارگذاری...';
     }
     
     // Reset after 2 seconds
@@ -114,7 +115,7 @@
     
     // Add event listener to toggle switch
     // افزودن شنونده رویداد به سوئیچ
-    toggleSwitch.addEventListener('change', handleToggle);
+    toggleSwitch.addEventListener('click', handleToggle);
     
     console.log('GDate2PDate Popup: Initialized successfully');
   }
