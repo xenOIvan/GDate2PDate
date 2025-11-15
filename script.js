@@ -253,7 +253,7 @@
 
     // تابع تبدیل نام ماه تنها (مثل "Nov" یا "October")
     // Convert standalone month names like "Nov" or "October"
-    function convertStandaloneMonth(monthStr) {
+    function convertStandaloneMonth(monthStr, originalText, offset) {
         try {
             if (!monthStr || typeof monthStr !== 'string') {
                 console.warn('⚠️ convertStandaloneMonth: Invalid input', monthStr);
@@ -273,6 +273,16 @@
                 };
                 
                 const jalaliMonth = approximateJalaliMonth[monthNumber];
+                
+                // Check if Persian month is already present after this position
+                // بررسی اینکه آیا ماه شمسی قبلاً بعد از این موقعیت وجود دارد
+                if (originalText && offset !== undefined) {
+                    const textAfter = originalText.substring(offset + monthName.length, offset + monthName.length + 20);
+                    // If Persian month already exists in parentheses, don't convert
+                    if (textAfter.includes(`(${jalaliMonth})`)) {
+                        return monthName;
+                    }
+                }
                 
                 // نمایش هر دو نام به صورت: "Nov (آبان)"
                 return `${monthName} (${jalaliMonth})`;
@@ -452,12 +462,22 @@
             // بررسی اینکه آیا این متن شامل تاریخ شمسی است (قبلاً تبدیل شده)
             const hasPersianDate = /\d{4}\/\d{2}\/\d{2}/.test(originalText);
             
+            // Check if text contains Persian characters (likely already converted)
+            // بررسی اینکه آیا متن شامل حروف فارسی است (احتمالاً قبلاً تبدیل شده)
+            const hasPersianChars = /[\u0600-\u06FF]/.test(originalText);
+            
             // Skip if already contains Persian dates to avoid re-conversion
             // رد کردن اگر قبلاً شامل تاریخ شمسی است تا از تبدیل مجدد جلوگیری شود
             if (hasPersianDate && originalText.indexOf('/') > -1) {
                 // But allow if there are also Gregorian dates present
                 const hasGregorianPattern = /\d{4}[-]\d{1,2}[-]\d{1,2}|\d{1,2}[-]\d{1,2}[-]\d{4}/.test(originalText);
                 if (!hasGregorianPattern) return;
+            }
+            
+            // If text has Persian chars and month name pattern like "Sep (مهر)", skip it
+            // اگر متن دارای حروف فارسی و الگوی نام ماه مثل "Sep (مهر)" باشد، رد کن
+            if (hasPersianChars && /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\s*\([^)]*[\u0600-\u06FF]/i.test(originalText)) {
+                return; // Already converted month names, skip
             }
             
             let newText = originalText;
@@ -491,7 +511,7 @@
                 // بررسی اینکه آیا این ماه قبلاً در یک تاریخ کامل پردازش شده یا نه
                 // Check if this month is not already part of a processed date
                 const before = newText.substring(Math.max(0, offset - 3), offset);
-                const after = newText.substring(offset + match.length, Math.min(newText.length, offset + match.length + 3));
+                const after = newText.substring(offset + match.length, Math.min(newText.length, offset + match.length + 20));
                 
                 // اگر قبل یا بعد از آن عدد یا کاما باشد، این قسمت از یک تاریخ کامل است
                 // If there's a number or comma before or after, it's part of a full date
@@ -499,7 +519,13 @@
                     return match; // تغییر نده
                 }
                 
-                return convertStandaloneMonth(match);
+                // اگر بعد از آن قبلاً پرانتز با متن فارسی وجود دارد، تغییر نده
+                // If there's already a parenthesis with Persian text after it, don't change
+                if (/^\s*\([^)]*[\u0600-\u06FF]/.test(after)) {
+                    return match; // Already converted
+                }
+                
+                return convertStandaloneMonth(match, newText, offset);
             });
 
             // اگر متن تغییر کرده، به‌روزرسانی کن
