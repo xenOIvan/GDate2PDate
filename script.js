@@ -1,13 +1,21 @@
 /**
- * تبدیل خودکار تاریخ میلادی به شمسی
- * Automatic Gregorian to Jalali Date Converter
+ * تبدیل خودکار تاریخ میلادی به شمسی با فرمت یکپارچه
+ * Automatic Gregorian to Jalali Date Converter with Unified Format
  * 
- * این فایل به صورت خودکار تمام تاریخ‌های میلادی را در صفحه پیدا کرده و به تاریخ شمسی تبدیل می‌کند
- * This file automatically finds and converts all Gregorian dates to Jalali dates
+ * این فایل ابتدا فرمت رایج تاریخ در صفحه را تشخیص می‌دهد
+ * سپس تمام تاریخ‌ها را به فرمت استاندارد شمسی (YYYY/MM/DD) تبدیل می‌کند
+ * 
+ * This file first detects the common date format on the page
+ * Then converts all dates to standard Jalali format (YYYY/MM/DD)
  */
 
 (function() {
     'use strict';
+
+    // متغیر سراسری برای ذخیره فرمت تشخیص داده شده
+    // Global variable to store detected format
+    let detectedPageFormat = null;
+    let formatConfidence = 0;
 
     // تابع تبدیل تاریخ میلادی به شمسی
     // Gregorian to Jalali conversion function
@@ -53,15 +61,15 @@
         // فرمت‌های مختلف تاریخ میلادی
         const patterns = [
             // ISO format: 2024-12-31 or 2024/12/31
-            { regex: /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/, format: 'YYYY-MM-DD', separator: null },
+            { regex: /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/, format: 'YYYY-MM-DD', separator: null, priority: 1 },
             // US format: 12/31/2024 or 12-31-2024
-            { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/, format: 'MM-DD-YYYY', separator: null },
+            { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/, format: 'MM-DD-YYYY', separator: null, priority: 2 },
             // European format: 31.12.2024 or 31/12/2024
-            { regex: /(\d{1,2})[\.](\d{1,2})[\.](\d{4})/, format: 'DD.MM.YYYY', separator: '.' },
+            { regex: /(\d{1,2})[\.](\d{1,2})[\.](\d{4})/, format: 'DD.MM.YYYY', separator: '.', priority: 3 },
             // With time: 2024-12-31 14:30:45 or 2024/12/31 14:30:45
-            { regex: /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'YYYY-MM-DD HH:mm:ss', separator: null },
+            { regex: /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'YYYY-MM-DD HH:mm:ss', separator: null, priority: 1 },
             // US with time: 12/31/2024 14:30:45
-            { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'MM-DD-YYYY HH:mm:ss', separator: null }
+            { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'MM-DD-YYYY HH:mm:ss', separator: null, priority: 2 }
         ];
 
         for (let pattern of patterns) {
@@ -73,10 +81,55 @@
                     else if (dateStr.includes('-')) pattern.separator = '-';
                     else pattern.separator = '/';
                 }
-                return { match, format: pattern.format, separator: pattern.separator };
+                return { match, format: pattern.format, separator: pattern.separator, priority: pattern.priority };
             }
         }
         return null;
+    }
+
+    // تابع تشخیص فرمت رایج در کل صفحه
+    // Detect the most common date format on the entire page
+    function detectPageDateFormat() {
+        const bodyText = document.body.innerText;
+        const formatCounts = {};
+        
+        // الگوهای مختلف تاریخ برای اسکن صفحه
+        const datePatterns = [
+            /\d{4}[-\/]\d{1,2}[-\/]\d{1,2}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/g,
+            /\d{1,2}[-\/]\d{1,2}[-\/]\d{4}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/g,
+            /\d{1,2}\.\d{1,2}\.\d{4}/g
+        ];
+
+        // پیدا کردن تمام تاریخ‌ها در صفحه
+        for (let pattern of datePatterns) {
+            const matches = bodyText.match(pattern) || [];
+            matches.forEach(match => {
+                const detected = detectDateFormat(match);
+                if (detected) {
+                    const baseFormat = detected.format.replace(' HH:mm:ss', '');
+                    formatCounts[baseFormat] = (formatCounts[baseFormat] || 0) + 1;
+                }
+            });
+        }
+
+        // پیدا کردن رایج‌ترین فرمت
+        let maxCount = 0;
+        let mostCommonFormat = 'YYYY-MM-DD'; // فرمت پیش‌فرض
+
+        for (let [format, count] of Object.entries(formatCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                mostCommonFormat = format;
+            }
+        }
+
+        detectedPageFormat = mostCommonFormat;
+        formatConfidence = maxCount;
+
+        console.log(`📊 فرمت تشخیص داده شده: ${mostCommonFormat} (تعداد: ${maxCount})`);
+        console.log(`📊 Detected format: ${mostCommonFormat} (count: ${maxCount})`);
+        
+        return mostCommonFormat;
     }
 
     // تابع تبدیل تاریخ با حفظ فرمت
@@ -85,7 +138,7 @@
         const detected = detectDateFormat(dateStr.trim());
         if (!detected) return dateStr;
 
-        const { match, format, separator } = detected;
+        const { match, format } = detected;
         let year, month, day, hour, minute, second;
 
         // استخراج اجزای تاریخ بر اساس فرمت
@@ -120,20 +173,15 @@
         // Convert to Jalali
         const jalali = gregorianToJalali(year, month, day);
         
-        // ساخت تاریخ شمسی با فرمت مشابه
-        // Build Jalali date with similar format
+        // ساخت تاریخ شمسی با فرمت استاندارد YYYY/MM/DD
+        // Build Jalali date with standard format YYYY/MM/DD
         const jYear = jalali.year.toString();
         const jMonth = jalali.month.toString().padStart(2, '0');
         const jDay = jalali.day.toString().padStart(2, '0');
 
-        let result = '';
-        if (format.startsWith('YYYY')) {
-            result = `${jYear}${separator}${jMonth}${separator}${jDay}`;
-        } else if (format.startsWith('MM')) {
-            result = `${jMonth}${separator}${jDay}${separator}${jYear}`;
-        } else if (format.startsWith('DD')) {
-            result = `${jDay}${separator}${jMonth}${separator}${jYear}`;
-        }
+        // همیشه فرمت YYYY/MM/DD استفاده می‌شود
+        // Always use YYYY/MM/DD format
+        let result = `${jYear}/${jMonth}/${jDay}`;
 
         // اضافه کردن زمان در صورت وجود
         // Add time if present
@@ -225,9 +273,16 @@
         console.log('🔄 Starting Gregorian to Jalali date conversion...');
         
         try {
+            // مرحله 1: تشخیص فرمت رایج صفحه
+            detectPageDateFormat();
+            
+            // مرحله 2: تبدیل تمام تاریخ‌ها به فرمت استاندارد YYYY/MM/DD
             traverseDOM(document.body);
+            
             console.log('✅ تبدیل تاریخ‌ها با موفقیت انجام شد');
             console.log('✅ Date conversion completed successfully');
+            console.log(`📅 تمام تاریخ‌ها به فرمت استاندارد شمسی (YYYY/MM/DD) تبدیل شدند`);
+            console.log(`📅 All dates converted to standard Jalali format (YYYY/MM/DD)`);
         } catch (error) {
             console.error('❌ خطا در تبدیل تاریخ‌ها:', error);
             console.error('❌ Error converting dates:', error);
@@ -264,5 +319,7 @@
 
     console.log('📅 سیستم تبدیل خودکار تاریخ فعال شد');
     console.log('📅 Automatic date conversion system activated');
+    console.log('🎯 فرمت خروجی: همیشه YYYY/MM/DD (شمسی)');
+    console.log('🎯 Output format: Always YYYY/MM/DD (Jalali)');
 
 })();
