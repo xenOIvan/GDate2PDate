@@ -17,6 +17,38 @@
     let detectedPageFormat = null;
     let formatConfidence = 0;
 
+    // نام ماه‌های میلادی و شمسی
+    // Gregorian and Jalali month names
+    const gregorianMonths = {
+        'january': 1, 'jan': 1,
+        'february': 2, 'feb': 2,
+        'march': 3, 'mar': 3,
+        'april': 4, 'apr': 4,
+        'may': 5,
+        'june': 6, 'jun': 6,
+        'july': 7, 'jul': 7,
+        'august': 8, 'aug': 8,
+        'september': 9, 'sep': 9, 'sept': 9,
+        'october': 10, 'oct': 10,
+        'november': 11, 'nov': 11,
+        'december': 12, 'dec': 12
+    };
+
+    const jalaliMonthNames = [
+        'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+        'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+    ];
+
+    const gregorianMonthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    const gregorianMonthNamesShort = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+
     // تابع تبدیل تاریخ میلادی به شمسی
     // Gregorian to Jalali conversion function
     function gregorianToJalali(gy, gm, gd) {
@@ -69,7 +101,11 @@
             // With time: 2024-12-31 14:30:45 or 2024/12/31 14:30:45
             { regex: /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'YYYY-MM-DD HH:mm:ss', separator: null, priority: 1 },
             // US with time: 12/31/2024 14:30:45
-            { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'MM-DD-YYYY HH:mm:ss', separator: null, priority: 2 }
+            { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'MM-DD-YYYY HH:mm:ss', separator: null, priority: 2 },
+            // Textual dates: "8 Nov", "Nov 8", "November 15", "15 September", "September 16, 1961"
+            { regex: /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i, format: 'DD Month', separator: null, priority: 4 },
+            { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i, format: 'Month DD', separator: null, priority: 4 },
+            { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/i, format: 'Month DD, YYYY', separator: null, priority: 4 }
         ];
 
         for (let pattern of patterns) {
@@ -85,6 +121,78 @@
             }
         }
         return null;
+    }
+
+    // تابع تبدیل نام ماه به شماره
+    // Convert month name to number
+    function getMonthNumber(monthName) {
+        return gregorianMonths[monthName.toLowerCase()] || null;
+    }
+
+    // تابع تبدیل تاریخ متنی (مثل "8 Nov" یا "September 15" یا "September 16, 1961")
+    // Convert textual dates like "8 Nov" or "September 15" or "September 16, 1961"
+    function convertTextualDate(dateStr) {
+        let day, month, year;
+        
+        // الگوی "September 16, 1961" (Month DD, YYYY)
+        let match = dateStr.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/i);
+        if (match) {
+            month = getMonthNumber(match[1]);
+            day = parseInt(match[2]);
+            year = parseInt(match[3]);
+        } else {
+            // الگوی "8 Nov" یا "15 September" (DD Month)
+            match = dateStr.match(/\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i);
+            
+            if (match) {
+                day = parseInt(match[1]);
+                month = getMonthNumber(match[2]);
+                year = new Date().getFullYear(); // استفاده از سال جاری
+            } else {
+                // الگوی "Nov 8" یا "September 15" (Month DD)
+                match = dateStr.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i);
+                if (match) {
+                    month = getMonthNumber(match[1]);
+                    day = parseInt(match[2]);
+                    year = new Date().getFullYear(); // استفاده از سال جاری
+                }
+            }
+        }
+
+        if (day && month && year) {
+            const jalali = gregorianToJalali(year, month, day);
+            const jYear = jalali.year.toString();
+            const jMonth = jalali.month.toString().padStart(2, '0');
+            const jDay = jalali.day.toString().padStart(2, '0');
+            
+            return `${jYear}/${jMonth}/${jDay}`;
+        }
+        
+        return dateStr;
+    }
+
+    // تابع تبدیل نام ماه تنها (مثل "Nov" یا "October")
+    // Convert standalone month names like "Nov" or "October"
+    function convertStandaloneMonth(monthStr) {
+        const monthName = monthStr.trim();
+        const monthNumber = getMonthNumber(monthName);
+        
+        if (monthNumber) {
+            // تبدیل به نام ماه شمسی تقریبی
+            // برای سادگی، از یک نقشه تقریبی استفاده می‌کنیم
+            const approximateJalaliMonth = {
+                1: 'دی', 2: 'بهمن', 3: 'اسفند', 4: 'فروردین',
+                5: 'اردیبهشت', 6: 'خرداد', 7: 'تیر', 8: 'مرداد',
+                9: 'شهریور', 10: 'مهر', 11: 'آبان', 12: 'آذر'
+            };
+            
+            const jalaliMonth = approximateJalaliMonth[monthNumber];
+            
+            // نمایش هر دو نام به صورت: "Nov (آبان)"
+            return `${monthName} (${jalaliMonth})`;
+        }
+        
+        return monthStr;
     }
 
     // تابع تشخیص فرمت رایج در کل صفحه
@@ -140,6 +248,12 @@
 
         const { match, format } = detected;
         let year, month, day, hour, minute, second;
+
+        // بررسی تاریخ‌های متنی (مثل "8 Nov" یا "November 15" یا "September 16, 1961")
+        // Check for textual dates like "8 Nov" or "November 15" or "September 16, 1961"
+        if (format === 'DD Month' || format === 'Month DD' || format === 'Month DD, YYYY') {
+            return convertTextualDate(dateStr);
+        }
 
         // استخراج اجزای تاریخ بر اساس فرمت
         // Extract date parts based on format
@@ -208,7 +322,12 @@
         const datePatterns = [
             /\d{4}[-\/]\d{1,2}[-\/]\d{1,2}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/g,
             /\d{1,2}[-\/]\d{1,2}[-\/]\d{4}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/g,
-            /\d{1,2}\.\d{1,2}\.\d{4}/g
+            /\d{1,2}\.\d{1,2}\.\d{4}/g,
+            // تاریخ‌های متنی با سال: "September 16, 1961"
+            /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/gi,
+            // تاریخ‌های متنی بدون سال: "8 Nov", "November 15"
+            /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/gi,
+            /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/gi
         ];
 
         for (let pattern of datePatterns) {
@@ -216,6 +335,27 @@
                 return convertDateToJalali(match);
             });
         }
+
+        // جایگزینی نام ماه‌های تنها (مثل "Nov", "October")
+        // Replace standalone month names like "Nov", "October"
+        const standaloneMonthPattern = /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/gi;
+        
+        // فقط اگر قبلاً با الگوهای دیگر جایگزین نشده باشد
+        // Only if not already replaced by other patterns
+        newText = newText.replace(standaloneMonthPattern, (match, offset) => {
+            // بررسی اینکه آیا این ماه قبلاً در یک تاریخ کامل پردازش شده یا نه
+            // Check if this month is not already part of a processed date
+            const before = newText.substring(Math.max(0, offset - 3), offset);
+            const after = newText.substring(offset + match.length, Math.min(newText.length, offset + match.length + 3));
+            
+            // اگر قبل یا بعد از آن عدد یا کاما باشد، این قسمت از یک تاریخ کامل است
+            // If there's a number or comma before or after, it's part of a full date
+            if (/[\d,]/.test(before) || /[\d,]/.test(after)) {
+                return match; // تغییر نده
+            }
+            
+            return convertStandaloneMonth(match);
+        });
 
         if (newText !== originalText) {
             node.nodeValue = newText;
