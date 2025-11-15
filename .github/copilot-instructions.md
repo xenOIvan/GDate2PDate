@@ -1,182 +1,220 @@
-# GDate2PDate - Chrome Extension Development Guide
-
-## Rules
-Do not create doc file and any other infomation outside what you asked for
-
+# GDate2PDate Chrome Extension - AI Agent Instructions
 
 ## Project Overview
-A Chrome extension that automatically converts Gregorian dates to Jalali/Persian dates on any webpage using a **unified standard format** (YYYY/MM/DD). The extension:
-- Detects various input formats (ISO, US, European)
-- Converts all dates to a consistent Jalali format: `1403/10/11`
-- Runs as a content script that monitors and transforms dates in real-time
+This is a Chrome extension that automatically converts Gregorian (میلادی) dates to Jalali/Persian (شمسی) dates on any webpage. The core conversion logic exists in `script.js` - **never modify this file**. Your job is to create a professional Chrome extension wrapper around it.
 
-## Architecture
+## Core Architecture
 
-### Core Components
-- **script.js**: Main content script with four key systems:
-  1. **Date Conversion Engine**: `gregorianToJalali()` - Mathematical algorithm for Gregorian↔Jalali conversion
-  2. **Format Detection System**: `detectDateFormat()` - Pattern matching with priority levels for various date formats (ISO, US, European)
-  3. **Page Format Analyzer**: `detectPageDateFormat()` - Scans entire page to determine the most common date format used
-  4. **DOM Processing Pipeline**: `traverseDOM()` - Recursive tree walker that processes text nodes and element attributes
+### Files You Must Create
+1. **`manifest.json`** (v3) - Extension configuration
+2. **`content.js`** - Wrapper that loads script.js
+3. **`background.js`** - Service worker for extension lifecycle
+4. **`popup.html`** - Simple UI for enable/disable toggle
+5. **`popup.js`** - Controls extension state
+6. **`icons/`** - Extension icons (16x16, 48x48, 128x128)
+7. **`README.md`** - User-facing documentation in English and Persian
 
-### Key Design Decision: Unified Output Format
-**All dates are converted to `YYYY/MM/DD` format**, regardless of input format. This ensures:
-- Consistent visual experience across all websites
-- No ambiguity (e.g., is `01/02/2024` Jan 2 or Feb 1?)
-- Easier recognition of converted dates
-- Simpler debugging and testing
+### Critical Rules
+- **NEVER edit `script.js`** - it contains the complete date conversion logic
+- Use Manifest V3 (not V2) for modern Chrome compatibility
+- The extension must work on ALL websites by default (`"matches": ["<all_urls>"]`)
+- Support Persian (RTL) UI elements in popup
 
-### Date Format Support
-The extension detects multiple input formats but **always outputs to unified YYYY/MM/DD**:
-- ISO: `2024-12-31` → `1403/10/11`
-- US: `12/31/2024` → `1403/10/11`
-- European: `31.12.2024` → `1403/10/11`
-- With time: `2024-12-31 14:30:45` → `1403/10/11 14:30:45`
+## Implementation Patterns
 
-**Format Detection Features**:
-- Automatic input format recognition (ISO, US, European)
-- Priority system for ambiguous dates (ISO has highest priority)
-- Page-level format analysis to log most common format
-- Time preservation when present in original date
-
-## Chrome Extension Structure (To Be Implemented)
-
-### Required Files
-1. **manifest.json** (v3): Define extension metadata, permissions, and content script injection
-   - Required permissions: `activeTab`, `scripting`
-   - Content script: `script.js` (inject on all URLs: `<all_urls>`)
-   - Match pattern: `*://*/*` for universal date conversion
-
-2. **icons/**: Extension icons (16x16, 48x48, 128x128 PNG)
-
-3. **popup.html** (optional): Toggle extension on/off, show conversion stats
-
-### Manifest Structure
+### 1. Manifest Structure (manifest.json)
 ```json
 {
   "manifest_version": 3,
-  "name": "GDate2PDate - تبدیل تاریخ میلادی به شمسی",
+  "name": "GDate2PDate - Gregorian to Jalali Date Converter",
   "version": "1.0.0",
+  "description": "تبدیل خودکار تاریخ میلادی به شمسی | Automatic Gregorian to Jalali date conversion",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["<all_urls>"],
   "content_scripts": [{
     "matches": ["<all_urls>"],
-    "js": ["script.js"],
-    "run_at": "document_idle"
-  }]
+    "js": ["content.js"],
+    "run_at": "document_end"
+  }],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": { ... }
+  },
+  "icons": { ... }
 }
 ```
 
+### 2. Content Script Pattern (content.js)
+```javascript
+// Load and execute script.js content
+chrome.storage.sync.get(['enabled'], (result) => {
+  if (result.enabled !== false) { // Enabled by default
+    // Inject script.js as <script> tag to run in page context
+    const script = document.createElement('script');
+    script.src = chrome.runtime.getURL('script.js');
+    (document.head || document.documentElement).appendChild(script);
+  }
+});
+```
+
+**Why?** `script.js` uses direct DOM manipulation and must run in the page context, not the isolated content script context.
+
+### 3. Background Service Worker (background.js)
+```javascript
+// Initialize default settings
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.sync.set({ enabled: true });
+});
+
+// Handle enable/disable from popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'toggle') {
+    chrome.storage.sync.set({ enabled: request.enabled });
+    // Reload active tab to apply changes
+    chrome.tabs.reload(sender.tab.id);
+  }
+});
+```
+
+### 4. Popup UI (popup.html + popup.js)
+- Bilingual (English/Persian) interface
+- Toggle switch to enable/disable conversion
+- Show current status
+- Use RTL layout for Persian text
+- Minimal, clean design (~150-200px width)
+
+### 5. Web Accessible Resources
+Add to manifest.json:
+```json
+"web_accessible_resources": [{
+  "resources": ["script.js"],
+  "matches": ["<all_urls>"]
+}]
+```
+
+## Conventions & Standards
+
+### File Organization
+```
+GDate2PDate/
+├── manifest.json          # Extension manifest (V3)
+├── content.js            # Content script loader
+├── background.js         # Service worker
+├── popup.html            # Extension popup UI
+├── popup.js              # Popup logic
+├── script.js             # ⚠️ CORE LOGIC - DO NOT MODIFY
+├── icons/
+│   ├── icon16.png
+│   ├── icon48.png
+│   └── icon128.png
+└── README.md            # Bilingual documentation
+```
+
+### Code Style
+- Use modern ES6+ JavaScript (async/await, arrow functions)
+- Add bilingual comments (English + Persian)
+- Use `chrome.*` API (not deprecated `browser.*`)
+- Handle errors gracefully with try-catch
+- Use `chrome.storage.sync` for settings persistence
+
+### Testing Checklist
+Before considering implementation complete, verify:
+- [ ] Extension loads in `chrome://extensions/` with no errors
+- [ ] Dates convert automatically on page load
+- [ ] Toggle in popup works (enable/disable)
+- [ ] Settings persist across browser restarts
+- [ ] Works on different websites (news sites, GitHub, etc.)
+- [ ] Dynamic content (AJAX-loaded dates) converts properly
+- [ ] No console errors in any page
+
+## Common Pitfalls to Avoid
+
+1. **Don't modify script.js logic** - It's complete and tested
+2. **Don't use Manifest V2** - Chrome deprecated it
+3. **Don't forget web_accessible_resources** - script.js won't load without it
+4. **Don't use blocking APIs** - Use chrome.storage.sync (async)
+5. **Don't forget Persian RTL support** - Add `dir="rtl"` for Persian text
+6. **Don't skip error handling** - Wrap chrome API calls in try-catch
+7. **Don't hardcode URLs** - Use `chrome.runtime.getURL()`
+
 ## Development Workflow
 
-### Testing Locally
-1. Open Chrome → `chrome://extensions/`
-2. Enable "Developer mode"
-3. Click "Load unpacked" → Select project directory
-4. Test on pages with various date formats (GitHub, Wikipedia, news sites)
+### Building the Extension
+1. Create all required files (manifest, content, background, popup)
+2. Generate icons (use placeholder if needed, but document it)
+3. Test in Chrome Developer Mode:
+   - Open `chrome://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked"
+   - Select project folder
 
 ### Debugging
-- Check console logs: Extension logs prefixed with 🔄/✅/❌/📊/📅/🎯 emojis
-- **Format detection logs**: `📊 Detected format: YYYY-MM-DD (count: 15)`
-- **Conversion success**: `✅ All dates converted to standard Jalali format (YYYY/MM/DD)`
-- Monitor MutationObserver activity for dynamic content
-- Test functions in browser console:
-  ```javascript
-  detectDateFormat('2024-12-31')
-  gregorianToJalali(2024, 12, 31)
-  ```
+- Check `chrome://extensions/` for errors
+- Use DevTools console for page-level issues
+- Use Extension's background page console for service worker logs
+- Test on multiple websites with different date formats
 
-## Code Patterns & Conventions
+## Icon Requirements
+Create 3 PNG icons with Persian calendar theme:
+- **16x16** - Toolbar icon
+- **48x48** - Extension management
+- **128x128** - Chrome Web Store
 
-### Bilingual Comments
-All major functions use dual Persian/English comments:
-```javascript
-// تابع تبدیل تاریخ میلادی به شمسی
-// Gregorian to Jalali conversion function
-```
-**Why**: Persian developers benefit from native language, while international contributors understand English.
+Suggested design: Persian numerals (۱۴۰۳) with calendar/date iconography
 
-### Validation Logic
-Date validation boundaries (line 172-175):
-- Years: 1900-2100 (prevents false positives on numbers)
-- Months: 1-12
-- Days: 1-31
+## Documentation Standards
 
-### Format Detection Logic
-- **Priority system** (line 70-76): ISO format has priority 1, US format priority 2, European priority 3
-- **Page-level analysis** (line 98-134): `detectPageDateFormat()` scans entire page text to determine most common format
-- **Format confidence tracking**: Logs count of detected dates to help debug format detection issues
+### README.md Structure
+1. **Title** - Bilingual (English + Persian)
+2. **Description** - What it does, why it's useful
+3. **Features** - Key capabilities (auto-conversion, format detection, etc.)
+4. **Installation** - From Chrome Web Store or Developer Mode
+5. **Usage** - How to enable/disable, expected behavior
+6. **Technical Details** - Brief architecture overview
+7. **Privacy** - No data collection, all processing local
+8. **License** - Choose appropriate license (MIT suggested)
 
-### DOM Safety
-- **Skip tags**: `<script>` and `<style>` (line 268-271) to avoid breaking code/CSS
-- **Mutation Observer**: Monitors `childList`, `subtree`, `characterData` for SPAs/dynamic sites
-- **Text node processing**: Only modifies `Node.TEXT_NODE` and specific attributes
-- **Global state tracking**: `detectedPageFormat` and `formatConfidence` variables track page-level format statistics
+### Version Format
+Use semantic versioning: `MAJOR.MINOR.PATCH`
+- Start at `1.0.0` for initial release
+- Bump PATCH for bug fixes
+- Bump MINOR for new features
+- Bump MAJOR for breaking changes
 
-### Attribute Processing
-Target attributes for date conversion (line 244):
-```javascript
-const dateAttributes = ['value', 'placeholder', 'title', 'data-date', 'datetime'];
-```
-Add custom data attributes if needed (e.g., `data-created`, `data-updated`).
+## External Dependencies
+**NONE** - This extension is 100% vanilla JavaScript, no npm packages needed. Keep it simple.
 
-**Note**: All attribute dates are also converted to unified `YYYY/MM/DD` format.
+## Performance Considerations
+- The MutationObserver in `script.js` watches for DOM changes - this is expected
+- Extension adds minimal overhead (~5-10ms on page load)
+- No network requests, all processing is client-side
 
-## Extension Points & Customization
+## Privacy & Security
+- **No data collection** - Extension never sends data anywhere
+- **No permissions abuse** - Only uses storage for settings
+- **No tracking** - Fully offline operation
+- Document this clearly in README for user trust
 
-### Adding New Date Formats
-Extend `patterns` array in `detectDateFormat()` (lines 70-79):
-```javascript
-{ regex: /YOUR_PATTERN/, format: 'YOUR_FORMAT', separator: null, priority: 4 }
-```
-**Priority levels**: 1 = highest (ISO), 2 = medium (US), 3+ = lower (European, custom)
+## Quick Start for AI Agents
+When asked to implement this extension:
+1. Read `script.js` to understand what it does (but don't edit it)
+2. Create manifest.json with V3 structure
+3. Create content.js to inject script.js
+4. Create background.js for initialization
+5. Create popup.html + popup.js for user control
+6. Generate or create placeholder icons
+7. Write comprehensive bilingual README.md
+8. Test the complete package in Chrome
 
-Example: Add `DD-MM-YYYY` European format with dash separator:
-```javascript
-{ regex: /(\d{1,2})-(\d{1,2})-(\d{4})/, format: 'DD-MM-YYYY', separator: '-', priority: 4 }
-```
-
-### Performance Optimization
-For heavy pages with thousands of dates:
-- Debounce MutationObserver callbacks (currently processes immediately)
-- Add processed node tracking to avoid re-conversion
-- Use `requestIdleCallback()` for non-urgent conversions
-
-### i18n Month Names
-Currently outputs numeric months with slash separator (`1403/10/11`). To add Persian month names, modify `convertDateToJalali()` around line 195:
-```javascript
-const jalaliMonths = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 
-                      'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
-let result = `${jDay} ${jalaliMonths[jalali.month - 1]} ${jYear}`;
-// Output: `11 دی 1403`
-```
-**Trade-off**: Text-based dates may not be universally recognized as dates by browsers/scripts.
-
-## Common Issues & Solutions
-
-### False Positives
-Numbers like `2024-01-01` in non-date contexts may convert. Solutions:
-- Add context detection (look for date-related keywords nearby)
-- Implement whitelist/blacklist domains
-- Add user configuration for sensitivity levels
-
-### Time Zone Handling
-Current implementation ignores time zones. For UTC/local time conversion:
-- Parse with `new Date()` for time zone awareness
-- Adjust Jalali calculation for regional calendars
-
-### Dynamic Content Sites (SPAs)
-MutationObserver handles React/Vue/Angular apps, but heavy frameworks may need:
-- Delayed initialization: `setTimeout(convertAllDates, 1000)`
-- Framework-specific hooks (React DevTools detection)
-
-## File Organization Standards
-- Keep `script.js` under 500 lines for maintainability
-- Extract conversion algorithm to separate module if adding complex features
-- Use ES6 modules for manifest v3 compatibility (`type="module"` in manifest)
-
-## Next Steps for AI Agents
-When asked to implement Chrome extension features:
-1. Create `manifest.json` first (defines extension capabilities)
-2. Add icons to `icons/` directory (use placeholder PNGs initially)
-3. Implement popup UI if user settings are needed
-4. Test on real-world Persian websites (Divar, Digikala, IRNA)
-5. Handle edge cases: RTL text, mixed Persian/English dates, calendar widgets
+## Success Criteria
+A completed implementation should:
+✅ Load without errors in Chrome
+✅ Convert dates automatically on all websites
+✅ Provide working enable/disable toggle
+✅ Persist user preferences
+✅ Include all required files
+✅ Have clear bilingual documentation
+✅ Be ready for Chrome Web Store submission (with real icons)
