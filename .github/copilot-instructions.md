@@ -25,7 +25,7 @@ Chrome extension: Gregorian → Jalali date conversion.
 - Visual status indicator
 
 ## Critical Rules
-1. **NEVER modify `script.js`**
+1. suggest your code and give my accepatnce before change into  **`script.js`**
 2. Use Manifest V3
 3. Add `web_accessible_resources: ["script.js"]`
 4. Reload **current tab only** (not all tabs): `chrome.tabs.query({ active: true, currentWindow: true })`

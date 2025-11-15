@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Late-Loading Content Test | تست محتوای دیررس</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0078d4;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+        .dashboard-widget {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+            min-height: 100px;
+        }
+        .widget-title {
+            color: #0078d4;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0078d4;
+        }
+        .date-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #0078d4;
+            border-radius: 4px;
+        }
+        .date-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 16px;
+            background: #e7f3ff;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .loading {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        button {
+            background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .instruction {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #0078d4;
+            margin-bottom: 20px;
+        }
+        .status {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 13px;
+            border-left: 4px solid #28a745;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Late-Loading Content Test</h1>
+        <p class="subtitle">تست محتوای دیررس - شبیه‌سازی داشبورد Azure</p>
+
+        <div class="instruction">
+            <h3>📋 Test Scenarios | سناریوهای تست</h3>
+            <p><strong>این صفحه شبیه‌سازی می‌کند:</strong></p>
+            <ul>
+                <li>🔹 بارگذاری تأخیری ویجت‌ها (مثل داشبورد Azure)</li>
+                <li>🔹 به‌روزرسانی محتوای AJAX</li>
+                <li>🔹 تغییرات دینامیک متن در نودهای موجود</li>
+                <li>🔹 بارگذاری چارت‌ها با تأخیر</li>
+            </ul>
+            <p><strong>This page simulates:</strong></p>
+            <ul>
+                <li>🔹 Delayed widget loading (like Azure dashboard)</li>
+                <li>🔹 AJAX content updates</li>
+                <li>🔹 Dynamic text changes in existing nodes</li>
+                <li>🔹 Late-loading charts</li>
+            </ul>
+        </div>
+
+        <div class="button-group">
+            <button onclick="loadWidget1()">📊 Load Widget 1 (2s delay)</button>
+            <button onclick="loadWidget2()">📈 Load Widget 2 (3s delay)</button>
+            <button onclick="loadChart()">📉 Load Chart (4s delay)</button>
+            <button onclick="updateExistingContent()">🔄 Update Existing Content</button>
+            <button onclick="loadAllWidgets()">🚀 Load All Widgets</button>
+        </div>
+
+        <div id="status"></div>
+
+        <!-- Widget 1: Simulates Azure Resource Overview -->
+        <div class="dashboard-widget" id="widget1">
+            <div class="widget-title">Widget 1: Resource Overview (Empty)</div>
+            <div class="loading">Click "Load Widget 1" to load content...</div>
+        </div>
+
+        <!-- Widget 2: Simulates Azure Activity Log -->
+        <div class="dashboard-widget" id="widget2">
+            <div class="widget-title">Widget 2: Activity Log (Empty)</div>
+            <div class="loading">Click "Load Widget 2" to load content...</div>
+        </div>
+
+        <!-- Chart: Simulates Azure Metrics Chart -->
+        <div class="dashboard-widget" id="chart">
+            <div class="widget-title">Chart: Metrics (Empty)</div>
+            <div class="loading">Click "Load Chart" to load content...</div>
+        </div>
+
+        <!-- Existing content that will be updated -->
+        <div class="dashboard-widget" id="updateable">
+            <div class="widget-title">Dynamic Content Update Test</div>
+            <div id="updateable-content">
+                <div class="date-item">
+                    <strong>Last Updated:</strong>
+                    <span class="date-value" id="last-updated">2024-01-01 00:00:00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add status message
+        function addStatus(message) {
+            const status = document.getElementById('status');
+            const div = document.createElement('div');
+            div.className = 'status';
+            div.innerHTML = message;
+            status.appendChild(div);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                div.remove();
+            }, 5000);
+        }
+
+        // Load Widget 1 with 2 second delay (simulates slow API)
+        function loadWidget1() {
+            const widget = document.getElementById('widget1');
+            widget.innerHTML = '<div class="widget-title">Widget 1: Resource Overview</div><div class="loading">⏳ Loading...</div>';
+            
+            addStatus('⏳ Loading Widget 1...');
+            
+            setTimeout(() => {
+                widget.innerHTML = `
+                    <div class="widget-title">Widget 1: Resource Overview</div>
+                    <div class="date-item">
+                        <strong>Resource Created:</strong>
+                        <span class="date-value">2024-10-15 08:30:00</span>
+                    </div>
+                    <div class="date-item">
+                        <strong>Last Modified:</strong>
+                        <span class="date-value">2024-11-16 14:45:30</span>
+                    </div>
+                    <div class="date-item">
+                        <strong>Next Backup:</strong>
+                        <span class="date-value">2024-11-20 00:00:00</span>
+                    </div>
+                `;
+                addStatus('✅ Widget 1 loaded! Dates should convert to Jalali.');
+                console.log('Widget 1 loaded at:', new Date().toISOString());
+            }, 2000);
+        }
+
+        // Load Widget 2 with 3 second delay
+        function loadWidget2() {
+            const widget = document.getElementById('widget2');
+            widget.innerHTML = '<div class="widget-title">Widget 2: Activity Log</div><div class="loading">⏳ Loading...</div>';
+            
+            addStatus('⏳ Loading Widget 2...');
+            
+            setTimeout(() => {
+                widget.innerHTML = `
+                    <div class="widget-title">Widget 2: Activity Log</div>
+                    <div class="date-item">
+                        <strong>Login Event:</strong>
+                        <span class="date-value">2024-11-16 09:15:00</span>
+                    </div>
+                    <div class="date-item">
+                        <strong>Configuration Change:</strong>
+                        <span class="date-value">Nov 15, 2024</span>
+                    </div>
+                    <div class="date-item">
+                        <strong>Alert Triggered:</strong>
+                        <span class="date-value">15 Nov</span>
+                    </div>
+                    <div class="date-item">
+                        <strong>Backup Completed:</strong>
+                        <span class="date-value">11/14/2024</span>
+                    </div>
+                `;
+                addStatus('✅ Widget 2 loaded! Multiple date formats should convert.');
+                console.log('Widget 2 loaded at:', new Date().toISOString());
+            }, 3000);
+        }
+
+        // Load Chart with 4 second delay
+        function loadChart() {
+            const chart = document.getElementById('chart');
+            chart.innerHTML = '<div class="widget-title">Chart: Metrics</div><div class="loading">⏳ Loading chart data...</div>';
+            
+            addStatus('⏳ Loading Chart...');
+            
+            setTimeout(() => {
+                chart.innerHTML = `
+                    <div class="widget-title">Chart: Metrics</div>
+                    <div class="chart-container">
+                        <div class="date-item">
+                            <strong>Data Range:</strong>
+                            <span class="date-value">2024-11-01</span> to 
+                            <span class="date-value">2024-11-16</span>
+                        </div>
+                        <div class="date-item">
+                            <strong>Peak Usage:</strong>
+                            <span class="date-value">2024-11-10 15:30:00</span>
+                        </div>
+                        <div class="date-item">
+                            <strong>Last Data Point:</strong>
+                            <span class="date-value">November 16, 2024</span>
+                        </div>
+                    </div>
+                `;
+                addStatus('✅ Chart loaded! Chart dates should convert to Jalali.');
+                console.log('Chart loaded at:', new Date().toISOString());
+            }, 4000);
+        }
+
+        // Update existing content (character data change)
+        function updateExistingContent() {
+            const element = document.getElementById('last-updated');
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 19).replace('T', ' ');
+            
+            addStatus('🔄 Updating existing content...');
+            
+            // Update the text content directly (characterData change)
+            setTimeout(() => {
+                element.textContent = dateStr;
+                addStatus('✅ Content updated! New date should convert to Jalali.');
+                console.log('Content updated to:', dateStr);
+            }, 500);
+        }
+
+        // Load all widgets sequentially
+        function loadAllWidgets() {
+            addStatus('🚀 Loading all widgets...');
+            loadWidget1();
+            setTimeout(loadWidget2, 2000);
+            setTimeout(loadChart, 4000);
+        }
+
+        // Auto-load one widget on page load to simulate dashboard behavior
+        window.addEventListener('load', function() {
+            console.log('Late-loading test page loaded at:', new Date().toISOString());
+            addStatus('📄 Page loaded. Click buttons to simulate late-loading content.');
+            
+            // Auto-load Widget 1 after 1 second to simulate initial dashboard load
+            setTimeout(() => {
+                addStatus('🔄 Auto-loading Widget 1...');
+                loadWidget1();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

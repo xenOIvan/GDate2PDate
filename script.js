@@ -448,9 +448,17 @@
             
             const originalText = node.nodeValue;
             
-            // بررسی اینکه آیا این node قبلاً پردازش شده است
-            // Check if this node was already processed
-            if (node._dateConverted) return;
+            // Check if this text contains Persian dates (already converted)
+            // بررسی اینکه آیا این متن شامل تاریخ شمسی است (قبلاً تبدیل شده)
+            const hasPersianDate = /\d{4}\/\d{2}\/\d{2}/.test(originalText);
+            
+            // Skip if already contains Persian dates to avoid re-conversion
+            // رد کردن اگر قبلاً شامل تاریخ شمسی است تا از تبدیل مجدد جلوگیری شود
+            if (hasPersianDate && originalText.indexOf('/') > -1) {
+                // But allow if there are also Gregorian dates present
+                const hasGregorianPattern = /\d{4}[-]\d{1,2}[-]\d{1,2}|\d{1,2}[-]\d{1,2}[-]\d{4}/.test(originalText);
+                if (!hasGregorianPattern) return;
+            }
             
             let newText = originalText;
 
@@ -498,14 +506,6 @@
             // If text changed, update it
             if (newText !== originalText) {
                 node.nodeValue = newText;
-                // علامت‌گذاری که این node پردازش شده است
-                // Mark this node as processed
-                try {
-                    node._dateConverted = true;
-                } catch (e) {
-                    // برخی از node ها read-only هستند
-                    // Some nodes are read-only
-                }
             }
         } catch (error) {
             console.error('❌ processTextNode: Unexpected error', error, node);
@@ -653,19 +653,29 @@
             mutationTimeout = setTimeout(() => {
                 mutations.forEach((mutation) => {
                     try {
-                        if (!mutation || !mutation.addedNodes) {
-                            return;
+                        // Handle added nodes
+                        // مدیریت نودهای اضافه شده
+                        if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+                            mutation.addedNodes.forEach((node) => {
+                                try {
+                                    if (node && (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE)) {
+                                        traverseDOM(node);
+                                    }
+                                } catch (nodeError) {
+                                    console.error('❌ MutationObserver: Error processing added node', nodeError, node);
+                                }
+                            });
                         }
                         
-                        mutation.addedNodes.forEach((node) => {
+                        // Handle character data changes (text content updates)
+                        // مدیریت تغییرات محتوای متنی
+                        if (mutation.type === 'characterData' && mutation.target) {
                             try {
-                                if (node && (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE)) {
-                                    traverseDOM(node);
-                                }
-                            } catch (nodeError) {
-                                console.error('❌ MutationObserver: Error processing added node', nodeError, node);
+                                processTextNode(mutation.target);
+                            } catch (charError) {
+                                console.error('❌ MutationObserver: Error processing character data', charError);
                             }
-                        });
+                        }
                     } catch (mutationError) {
                         console.error('❌ MutationObserver: Error processing mutation', mutationError, mutation);
                     }
@@ -693,9 +703,34 @@
         console.error('❌ MutationObserver: Failed to start observer', error);
     }
 
+    // Listen for custom re-conversion events from content script
+    // گوش دادن به رویدادهای سفارشی تبدیل مجدد از content script
+    document.addEventListener('gdate2pdate-reconvert', function(event) {
+        try {
+            console.log('🔄 GDate2PDate: Re-conversion triggered by event', event.detail);
+            
+            // Re-run conversion on the entire page
+            // اجرای مجدد تبدیل در کل صفحه
+            if (!isProcessing) {
+                convertAllDates();
+            } else {
+                console.log('⏳ GDate2PDate: Conversion already in progress, will retry...');
+                setTimeout(function() {
+                    if (!isProcessing) {
+                        convertAllDates();
+                    }
+                }, 500);
+            }
+        } catch (error) {
+            console.error('❌ GDate2PDate: Error handling reconvert event', error);
+        }
+    });
+
     console.log('📅 سیستم تبدیل خودکار تاریخ فعال شد');
     console.log('📅 Automatic date conversion system activated');
     console.log('🎯 فرمت خروجی: همیشه YYYY/MM/DD (شمسی)');
     console.log('🎯 Output format: Always YYYY/MM/DD (Jalali)');
+    console.log('👂 Listening for late-loading content events');
+    console.log('👂 گوش دادن به رویدادهای محتوای دیررس');
 
 })();
