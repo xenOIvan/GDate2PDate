@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "GDate2PDate - Gregorian to Jalali Date Converter",
   "name__fa": "تبدیل تاریخ میلادی به شمسی",
-  "version": "1.0.0",
+  "version": "1404.8.25",
   "description": "Automatically converts Gregorian dates to Jalali (Persian) dates on any webpage | تبدیل خودکار تاریخ میلادی به شمسی در هر صفحه وب",
   "author": "GDate2PDate Team",
   

@@ -10,9 +10,9 @@
       margin: 0;
       padding: 0;
       width: 280px;
-      min-height: 320px;
+      min-height: 250px;
       font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #3b3b3b 0%, #393939 100%);
       color: #2d3748;
       overflow: hidden;
     }
@@ -31,7 +31,7 @@
     }
 
     .title {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: bold;
       color: #ffffff;
       margin: 0 0 4px 0;
@@ -39,7 +39,7 @@
     }
 
     .subtitle {
-      font-size: 12px;
+      font-size: 16px;
       color: #e2e8f0;
       margin: 0;
       opacity: 0.9;
@@ -72,7 +72,6 @@
       height: 8px;
       border-radius: 50%;
       background-color: #48bb78;
-      animation: pulse 2s infinite;
     }
 
     .status-dot.disabled {
@@ -149,8 +148,9 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1 class="title">GDate2PDate</h1>
-      <p class="subtitle">تبدیل تاریخ میلادی به شمسی</p>
+      <h1 class="title">تبدیل خودکار تاریخ میلادی به شمسی</h1>
+      <!-- <h1 class="title">تبدیل تاریخ میلادی به شمسی</h1> -->
+      <p class="subtitle">GDate2PDate</p>
     </div>
     <div class="status-card">
       <div class="status-indicator">
@@ -164,11 +164,8 @@
         </div>
       </div>
     </div>
-    <div class="info-section">
-      این افزونه به طور خودکار تاریخ‌های میلادی را در صفحات وب به تاریخ شمسی تبدیل می‌کند
-    </div>
     <div class="footer">
-      نسخه 1.0.0 | Made with ❤️
+      نسخه 04.08.25 | ساخته شده با 💚 در ایران
     </div>
   </div>
   <script src="popup.js"></script>
