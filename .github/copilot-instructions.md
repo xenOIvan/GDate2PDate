@@ -73,18 +73,31 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'toggle') {
     chrome.storage.sync.set({ enabled: request.enabled });
-    // Reload active tab to apply changes
-    chrome.tabs.reload(sender.tab.id);
+    // Reload only current active tab to apply changes
+    reloadCurrentTab();
   }
+  return true; // Keep message channel open for async response
 });
+
+// Reload current tab only (not all tabs)
+function reloadCurrentTab() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0] && !tabs[0].url.startsWith('chrome://')) {
+      chrome.tabs.reload(tabs[0].id);
+    }
+  });
+}
 ```
 
+**Important:** Only reload the **current active tab**, not all open tabs. This prevents disrupting the user's other work.
+
 ### 4. Popup UI (popup.html + popup.js)
-- Bilingual (English/Persian) interface
+- Bilingual (English/Persian) interface with RTL for Persian
 - Toggle switch to enable/disable conversion
-- Show current status
-- Use RTL layout for Persian text
-- Minimal, clean design (~150-200px width)
+- Show current status with visual indicator
+- Modern gradient design (purple theme: #667eea → #764ba2)
+- Width: 320px, responsive and clean
+- Clear feedback messages when toggling
 
 ### 5. Web Accessible Resources
 Add to manifest.json:
@@ -129,6 +142,9 @@ Before considering implementation complete, verify:
 - [ ] Works on different websites (news sites, GitHub, etc.)
 - [ ] Dynamic content (AJAX-loaded dates) converts properly
 - [ ] No console errors in any page
+- [ ] Only current tab reloads when toggling (not all tabs)
+- [ ] Icons display correctly in toolbar and extension page
+- [ ] Popup UI is bilingual with proper RTL for Persian
 
 ## Common Pitfalls to Avoid
 
@@ -139,6 +155,7 @@ Before considering implementation complete, verify:
 5. **Don't forget Persian RTL support** - Add `dir="rtl"` for Persian text
 6. **Don't skip error handling** - Wrap chrome API calls in try-catch
 7. **Don't hardcode URLs** - Use `chrome.runtime.getURL()`
+8. **Don't reload all tabs** - Only reload the current active tab when toggling
 
 ## Development Workflow
 
@@ -156,13 +173,18 @@ Before considering implementation complete, verify:
 - Use DevTools console for page-level issues
 - Use Extension's background page console for service worker logs
 - Test on multiple websites with different date formats
-
 ## Icon Requirements
 Create 3 PNG icons with Persian calendar theme:
 - **16x16** - Toolbar icon
 - **48x48** - Extension management
 - **128x128** - Chrome Web Store
 
+**Design specifications:**
+- Purple gradient background (#667eea → #764ba2)
+- White calendar card with rounded corners
+- Blue header section on calendar
+- Grid of dots representing calendar days
+- Professional and clean appearance
 Suggested design: Persian numerals (۱۴۰۳) with calendar/date iconography
 
 ## Documentation Standards
@@ -200,15 +222,33 @@ Use semantic versioning: `MAJOR.MINOR.PATCH`
 
 ## Quick Start for AI Agents
 When asked to implement this extension:
-1. Read `script.js` to understand what it does (but don't edit it)
-2. Create manifest.json with V3 structure
-3. Create content.js to inject script.js
-4. Create background.js for initialization
-5. Create popup.html + popup.js for user control
-6. Generate or create placeholder icons
-7. Write comprehensive bilingual README.md
-8. Test the complete package in Chrome
+## Success Criteria
+A completed implementation should:
+✅ Load without errors in Chrome
+✅ Convert dates automatically on all websites
+✅ Provide working enable/disable toggle
+✅ Only reload current tab (not all tabs) when toggling
+✅ Persist user preferences across sessions
+✅ Include all required files (manifest, content, background, popup, icons)
+✅ Have professional gradient-themed icons (16, 48, 128px)
+✅ Have beautiful bilingual UI with RTL support
+✅ Have clear bilingual documentation
+✅ Be ready for Chrome Web Store submission
 
+## Key Behavioral Requirements
+
+**Tab Reload Behavior:**
+- When user toggles extension on/off, ONLY reload the current active tab
+- Do NOT reload all open tabs (this disrupts user's workflow)
+- Use `chrome.tabs.query({ active: true, currentWindow: true })`
+- Skip chrome:// and edge:// URLs that cannot be reloaded
+
+**User Experience:**
+- Extension enabled by default on first install
+- Clear visual feedback in popup (green for enabled, red for disabled)
+- Status messages should be bilingual
+- Settings persist using chrome.storage.sync
+- No network requests - all processing is local
 ## Success Criteria
 A completed implementation should:
 ✅ Load without errors in Chrome
