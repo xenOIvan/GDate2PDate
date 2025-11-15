@@ -89,9 +89,9 @@
     const originalText = statusText.textContent;
     
     if (enabled) {
-      statusText.textContent = '✅ فعال شد! صفحات در حال بارگذاری... | Enabled! Reloading pages...';
+      statusText.textContent = '✅ فعال شد! تب در حال بارگذاری... | Enabled! Reloading tab...';
     } else {
-      statusText.textContent = '❌ غیرفعال شد! صفحات در حال بارگذاری... | Disabled! Reloading pages...';
+      statusText.textContent = '❌ غیرفعال شد! تب در حال بارگذاری... | Disabled! Reloading tab...';
     }
     
     // Reset after 2 seconds

@@ -47,10 +47,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       console.log(`GDate2PDate: Extension ${request.enabled ? 'enabled' : 'disabled'}`);
       console.log(`تبدیل تاریخ: افزونه ${request.enabled ? 'فعال' : 'غیرفعال'} شد`);
       
-      // Reload all tabs to apply changes
-      // بارگذاری مجدد همه تب‌ها برای اعمال تغییرات
+      // Reload only current active tab to apply changes
+      // بارگذاری مجدد فقط تب فعال فعلی برای اعمال تغییرات
       if (request.reloadTabs !== false) {
-        reloadAllTabs();
+        reloadCurrentTab();
       }
       
       sendResponse({ success: true, enabled: request.enabled });
@@ -71,12 +71,13 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 /**
- * Reload all tabs to apply extension state changes
- * بارگذاری مجدد همه تب‌ها برای اعمال تغییرات وضعیت افزونه
+ * Reload only the current active tab to apply extension state changes
+ * بارگذاری مجدد فقط تب فعال فعلی برای اعمال تغییرات وضعیت افزونه
  */
-function reloadAllTabs() {
-  chrome.tabs.query({}, function(tabs) {
-    tabs.forEach(function(tab) {
+function reloadCurrentTab() {
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+    if (tabs[0]) {
+      const tab = tabs[0];
       // Skip chrome:// and edge:// URLs (can't reload these)
       // عبور از URLهای chrome:// و edge:// (قابل بارگذاری مجدد نیستند)
       if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('edge://')) {
@@ -84,7 +85,7 @@ function reloadAllTabs() {
           console.log('GDate2PDate: Could not reload tab:', error);
         });
       }
-    });
+    }
   });
 }
 
