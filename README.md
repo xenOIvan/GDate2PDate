@@ -4,13 +4,14 @@
 
 ![Extension Icon](icons/icon128.png)
 
-**تبدیل خودکار تاریخ‌های میلادی به شمسی در هر صفحه وب**
+**🔄 تبدیل خودکار تاریخ‌های میلادی به شمسی در هر صفحه وب**
 
-**Automatic Gregorian to Jalali (Persian) Date Conversion on Any Webpage**
+**🔄 Automatic Gregorian to Jalali (Persian) Date Conversion on Any Webpage**
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore)
 [![Version](https://img.shields.io/badge/Version-1.0.0-success?style=for-the-badge)](https://github.com/yourusername/GDate2PDate)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![Downloads](https://img.shields.io/badge/Downloads-1K+-brightgreen?style=for-the-badge)](https://chrome.google.com/webstore)
 
 </div>
 
@@ -221,6 +222,32 @@ GDate2PDate/
 
 ---
 
+## 📸 اسکرین‌شات‌ها | Screenshots
+
+### فارسی
+<div align="center">
+
+| قبل از تبدیل | بعد از تبدیل |
+|:---:|:---:|
+| ![Before](https://via.placeholder.com/400x200?text=Before+Conversion) | ![After](https://via.placeholder.com/400x200?text=After+Conversion) |
+
+*تاریخ‌های میلادی به صورت خودکار به شمسی تبدیل می‌شوند*
+
+</div>
+
+### English
+<div align="center">
+
+| Before Conversion | After Conversion |
+|:---:|:---:|
+| ![Before](https://via.placeholder.com/400x200?text=Before+Conversion) | ![After](https://via.placeholder.com/400x200?text=After+Conversion) |
+
+*Gregorian dates are automatically converted to Jalali*
+
+</div>
+
+---
+
 ## 🤝 مشارکت | Contributing
 
 ### فارسی
@@ -245,6 +272,42 @@ Contributions are welcome! To contribute:
 
 ---
 
+## 🛠️ توسعه و تست | Development & Testing
+
+### فارسی
+
+برای توسعه‌دهندگان:
+
+```bash
+# کلون کردن پروژه
+git clone https://github.com/yourusername/GDate2PDate.git
+cd GDate2PDate
+
+# تولید آیکون‌ها (اختیاری)
+python generate_icons.py
+
+# بارگذاری در حالت توسعه‌دهنده
+# chrome://extensions/ > Developer mode > Load unpacked
+```
+
+### English
+
+For developers:
+
+```bash
+# Clone the project
+git clone https://github.com/yourusername/GDate2PDate.git
+cd GDate2PDate
+
+# Generate icons (optional)
+python generate_icons.py
+
+# Load in developer mode
+# chrome://extensions/ > Developer mode > Load unpacked
+```
+
+---
+
 ## 💡 پشتیبانی | Support
 
 ### فارسی
@@ -253,7 +316,8 @@ Contributions are welcome! To contribute:
 
 - 🐛 [گزارش باگ](https://github.com/yourusername/GDate2PDate/issues)
 - 💡 [درخواست ویژگی جدید](https://github.com/yourusername/GDate2PDate/issues)
-- 📧 ایمیل: your.email@example.com
+- 💬 [بحث و گفتگو](https://github.com/yourusername/GDate2PDate/discussions)
+- ⭐ اگر از این افزونه راضی هستید، ستاره بدهید!
 
 ### English
 
@@ -261,7 +325,8 @@ If you have issues or suggestions:
 
 - 🐛 [Report Bug](https://github.com/yourusername/GDate2PDate/issues)
 - 💡 [Request Feature](https://github.com/yourusername/GDate2PDate/issues)
-- 📧 Email: your.email@example.com
+- 💬 [Discussions](https://github.com/yourusername/GDate2PDate/discussions)
+- ⭐ If you like this extension, give it a star!
 
 ---
 
@@ -293,7 +358,11 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) file for 
 
 **Made with ❤️ for the Persian-speaking community**
 
+[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/GDate2PDate&type=Date)](https://star-history.com/#yourusername/GDate2PDate&Date)
+
 ⭐ اگر این افزونه برای شما مفید بود، لطفاً یک ستاره بدهید!  
 ⭐ If this extension is useful for you, please give it a star!
+
+[⬆ برگشت به بالا | Back to top](#gdate2pdate---تبدیل-تاریخ-میلادی-به-شمسی)
 
 </div>
