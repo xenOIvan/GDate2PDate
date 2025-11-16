@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Preservation Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-case {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .value {
+            font-size: 1.2em;
+            color: #0066cc;
+            padding: 10px;
+            background: #f0f8ff;
+            border-left: 4px solid #0066cc;
+            margin: 10px 0;
+        }
+        .expected {
+            color: #28a745;
+            font-style: italic;
+            margin-top: 5px;
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🕐 Time Preservation Debug Test</h1>
+    <p style="text-align: center; color: #666;">Open browser console (F12) to see debug logs</p>
+
+    <div class="test-case">
+        <div class="label">Test 1: ISO format with time</div>
+        <div class="value">2024-11-16 14:30:45</div>
+        <div class="expected">✓ Expected: 1403/08/26 14:30:45</div>
+    </div>
+
+    <div class="test-case">
+        <div class="label">Test 2: Database backup time</div>
+        <div class="value">2024-11-01 02:00:00</div>
+        <div class="expected">✓ Expected: 1403/08/11 02:00:00</div>
+    </div>
+
+    <div class="test-case">
+        <div class="label">Test 3: Morning meeting</div>
+        <div class="value">2024-11-20 09:00:00</div>
+        <div class="expected">✓ Expected: 1403/08/30 09:00:00</div>
+    </div>
+
+    <div class="test-case">
+        <div class="label">Test 4: Midnight</div>
+        <div class="value">2024-12-31 23:59:59</div>
+        <div class="expected">✓ Expected: 1403/10/11 23:59:59</div>
+    </div>
+
+    <div class="test-case">
+        <div class="label">Test 5: Server uptime</div>
+        <div class="value">2024-10-15 08:30:15</div>
+        <div class="expected">✓ Expected: 1403/07/24 08:30:15</div>
+    </div>
+
+    <div class="test-case">
+        <div class="label">Test 6: US format with time</div>
+        <div class="value">11/16/2024 16:45:30</div>
+        <div class="expected">✓ Expected: 1403/08/26 16:45:30</div>
+    </div>
+
+    <div class="test-case">
+        <div class="label">Test 7: Time without seconds</div>
+        <div class="value">2024-11-16 14:30</div>
+        <div class="expected">✓ Expected: 1403/08/26 14:30</div>
+    </div>
+
+    <div class="test-case">
+        <div class="label">Test 8: Single digit hour</div>
+        <div class="value">2024-11-16 9:05:30</div>
+        <div class="expected">✓ Expected: 1403/08/26 09:05:30</div>
+    </div>
+
+    <script>
+        console.log('🚀 Test page loaded. Extension should process timestamps...');
+        console.log('📊 Check the values above - they should show Jalali dates WITH time intact');
+        
+        // Monitor changes to see if times are being preserved
+        setTimeout(() => {
+            const values = document.querySelectorAll('.value');
+            values.forEach((el, idx) => {
+                console.log(`Test ${idx + 1}: ${el.textContent}`);
+                if (el.textContent.includes(':')) {
+                    console.log(`  ✅ Time component present`);
+                } else if (el.textContent.match(/\d{4}/)) {
+                    console.log(`  ⚠️ WARNING: Time component MISSING!`);
+                }
+            });
+        }, 2000);
+    </script>
+</body>
+</html>

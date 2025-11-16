@@ -399,6 +399,7 @@
                 hour = match[4] ? parseInt(match[4]) : null;
                 minute = match[5] ? parseInt(match[5]) : null;
                 second = match[6] ? parseInt(match[6]) : null;
+                console.log(`🔍 Extracted (YYYY format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
             } else if (format.startsWith('MM')) {
                 month = parseInt(match[1]);
                 day = parseInt(match[2]);
@@ -406,6 +407,7 @@
                 hour = match[4] ? parseInt(match[4]) : null;
                 minute = match[5] ? parseInt(match[5]) : null;
                 second = match[6] ? parseInt(match[6]) : null;
+                console.log(`🔍 Extracted (MM format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
             } else if (format.startsWith('DD')) {
                 day = parseInt(match[1]);
                 month = parseInt(match[2]);
@@ -413,6 +415,7 @@
                 hour = match[4] ? parseInt(match[4]) : null;
                 minute = match[5] ? parseInt(match[5]) : null;
                 second = match[6] ? parseInt(match[6]) : null;
+                console.log(`🔍 Extracted (DD format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
             }
 
             // Validate parsed values
@@ -474,8 +477,10 @@
                 const mm = minute.toString().padStart(2, '0');
                 const ss = second !== null ? ':' + second.toString().padStart(2, '0') : '';
                 result += ` ${hh}:${mm}${ss}`;
+                console.log(`⏰ Time preserved: ${dateStr} → ${result} (hour=${hour}, min=${minute}, sec=${second})`);
             }
 
+            console.log(`📅 Conversion: ${dateStr} → ${result}`);
             return result;
         } catch (error) {
             console.error('❌ convertDateToJalali: Unexpected error', error, dateStr);
