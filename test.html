@@ -194,6 +194,12 @@
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
         
+        .test-card .original-input.error {
+            border: 3px solid #f44336;
+            background: #ffebee;
+            color: #c62828;
+        }
+        
         .test-card .original-label {
             margin-top: 10px;
             font-size: 0.8em;
@@ -1782,7 +1788,57 @@
                 log('🔄 Auto-loading Widget 1 to simulate dashboard...', 'info');
                 loadWidget('widget1', 2000);
             }, 2000);
+            
+            // Start validation after extension has time to process
+            setTimeout(() => {
+                validateConversions();
+            }, 3000);
         });
+
+        // Validation function
+        function validateConversions() {
+            log('🔍 Starting validation of conversions...', 'info');
+            let totalTests = 0;
+            let passedTests = 0;
+            let failedTests = 0;
+            
+            document.querySelectorAll('.test-card').forEach(card => {
+                const valueElement = card.querySelector('.value');
+                const expectedElement = card.querySelector('.expected');
+                const inputElement = card.querySelector('.original-input');
+                
+                if (!valueElement || !expectedElement || !inputElement) return;
+                
+                totalTests++;
+                
+                // Extract expected Jalali date from the expected text
+                const expectedText = expectedElement.textContent;
+                const expectedMatch = expectedText.match(/(\d{4}\/\d{2}\/\d{2})/);
+                
+                if (expectedMatch) {
+                    const expectedDate = expectedMatch[1];
+                    const convertedValue = valueElement.textContent.trim();
+                    
+                    // Check if the converted value contains the expected date
+                    if (convertedValue.includes(expectedDate)) {
+                        passedTests++;
+                        inputElement.classList.remove('error');
+                    } else {
+                        failedTests++;
+                        inputElement.classList.add('error');
+                        log(`❌ Validation failed: Expected "${expectedDate}" but got "${convertedValue}"`, 'error');
+                    }
+                }
+            });
+            
+            log(`✅ Validation complete: ${passedTests} passed, ${failedTests} failed out of ${totalTests} tests`, 
+                failedTests > 0 ? 'error' : 'success');
+        }
+
+        // Re-validate periodically to catch late conversions
+        setInterval(() => {
+            validateConversions();
+        }, 5000);
 
         // Monitor for repetition bugs
         let textSnapshots = {};

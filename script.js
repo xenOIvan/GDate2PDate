@@ -498,6 +498,33 @@
             
             const originalText = node.nodeValue;
             
+            // Check parent element - skip if it's a time-related element
+            // بررسی المان والد - رد کردن اگر المان مربوط به زمان است
+            if (node.parentNode && node.parentNode.tagName) {
+                const parentTag = node.parentNode.tagName.toLowerCase();
+                const parentClass = node.parentNode.className || '';
+                
+                // Skip <time>, <relative-time>, or elements with time-related classes
+                if (parentTag === 'time' || 
+                    parentTag === 'relative-time' || 
+                    /time|date|timestamp|relative|ago/i.test(parentClass)) {
+                    return; // Skip time elements
+                }
+            }
+            
+            // Skip relative time phrases ("1 hour ago", "2 min ago", "2 minutes ago", etc.)
+            // رد کردن عبارات زمان نسبی ("1 hour ago", "2 min ago", "2 minutes ago" و غیره)
+            const relativeTimePattern = /\b\d+\s*(second|seconds|sec|secs|minute|minutes|min|mins|hour|hours|hr|hrs|day|days|week|weeks|month|months|year|years|yr|yrs)\s+(ago|from now|later|earlier|before|after)\b/i;
+            if (relativeTimePattern.test(originalText)) {
+                return; // Skip relative time expressions
+            }
+            
+            // Also skip "just now", "moments ago", "yesterday", "today", "tomorrow", "an hour ago", "a minute ago"
+            const commonTimePattern = /\b(just now|moments? ago|yesterday|today|tomorrow|last (week|month|year)|next (week|month|year)|an? (second|minute|hour|day|week|month|year) ago)\b/i;
+            if (commonTimePattern.test(originalText)) {
+                return; // Skip common time expressions
+            }
+            
             // Check if this text contains Persian dates (already converted)
             // بررسی اینکه آیا این متن شامل تاریخ شمسی است (قبلاً تبدیل شده)
             const hasPersianDate = /\d{4}\/\d{2}\/\d{2}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/.test(originalText);
@@ -530,14 +557,29 @@
                 /\d{1,2}\.\d{1,2}\.\d{4}/g,
                 // تاریخ‌های متنی با سال: "September 16, 1961"
                 /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/gi,
-                // تاریخ‌های متنی بدون سال: "8 Nov", "November 15"
-                /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/gi,
-                /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/gi
+                // تاریخ‌های متنی بدون سال: "8 Nov", "November 15" (but not "8 hours ago")
+                /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)(?!\s+ago)\b/gi,
+                /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})(?!\s+ago)\b/gi
             ];
 
             for (let pattern of datePatterns) {
-                newText = newText.replace(pattern, (match) => {
-                    return convertDateToJalali(match);
+                newText = newText.replace(pattern, (match, ...args) => {
+                    // Get the full match string and its position
+                    const fullMatch = match;
+                    const offset = args[args.length - 2];
+                    const fullString = args[args.length - 1];
+                    
+                    // Check context before and after match to ensure it's not a relative time
+                    const contextBefore = fullString.substring(Math.max(0, offset - 20), offset);
+                    const contextAfter = fullString.substring(offset + fullMatch.length, Math.min(fullString.length, offset + fullMatch.length + 20));
+                    
+                    // Skip if it's part of a relative time expression
+                    if (/\b(second|minute|hour|day|week|month|year)s?\s*$/i.test(contextBefore) || 
+                        /^\s*(second|minute|hour|day|week|month|year)s?\s+(ago|from|later)/i.test(contextAfter)) {
+                        return fullMatch; // Don't convert
+                    }
+                    
+                    return convertDateToJalali(fullMatch);
                 });
             }
 
@@ -627,10 +669,11 @@
             // پردازش نودهای متنی
             // Process text nodes
             if (node.nodeType === Node.TEXT_NODE) {
-                // Skip text nodes inside input, textarea, select elements
-                // رد کردن نودهای متنی داخل المان‌های ورودی
+                // Skip text nodes inside input, textarea, select, time, relative-time elements
+                // رد کردن نودهای متنی داخل المان‌های ورودی و زمان
                 const parentTag = node.parentNode ? node.parentNode.tagName : '';
-                if (parentTag && (parentTag === 'INPUT' || parentTag === 'TEXTAREA' || parentTag === 'SELECT')) {
+                if (parentTag && (parentTag === 'INPUT' || parentTag === 'TEXTAREA' || parentTag === 'SELECT' || 
+                    parentTag === 'TIME' || parentTag === 'RELATIVE-TIME')) {
                     return;
                 }
                 processTextNode(node);
@@ -640,10 +683,11 @@
             else if (node.nodeType === Node.ELEMENT_NODE) {
                 const tagName = node.tagName ? node.tagName.toUpperCase() : '';
                 
-                // نادیده گرفتن تگ‌های script، style و المان‌های ورودی
-                // Skip script, style tags and input elements
+                // نادیده گرفتن تگ‌های script، style، time و المان‌های ورودی
+                // Skip script, style, time tags and input elements
                 if (tagName !== 'SCRIPT' && tagName !== 'STYLE' && 
-                    tagName !== 'INPUT' && tagName !== 'TEXTAREA' && tagName !== 'SELECT') {
+                    tagName !== 'INPUT' && tagName !== 'TEXTAREA' && tagName !== 'SELECT' &&
+                    tagName !== 'TIME' && tagName !== 'RELATIVE-TIME') {
                     processElementAttributes(node);
                     
                     // پردازش فرزندان
