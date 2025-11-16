@@ -140,17 +140,21 @@
             }
             
             // فرمت‌های مختلف تاریخ میلادی
+            // IMPORTANT: Patterns with time MUST come BEFORE patterns without time!
             const patterns = [
-                // ISO format: 2024-12-31 or 2024/12/31
-                { regex: /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/, format: 'YYYY-MM-DD', separator: null, priority: 1 },
-                // US format: 12/31/2024 or 12-31-2024
-                { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/, format: 'MM-DD-YYYY', separator: null, priority: 2 },
-                // European format: 31.12.2024 or 31/12/2024
-                { regex: /(\d{1,2})[\.](\d{1,2})[\.](\d{4})/, format: 'DD.MM.YYYY', separator: '.', priority: 3 },
-                // With time: 2024-12-31 14:30:45 or 2024/12/31 14:30:45
+                // With time: 2024-12-31 14:30:45 or 2024/12/31 14:30:45 (MUST BE FIRST!)
                 { regex: /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'YYYY-MM-DD HH:mm:ss', separator: null, priority: 1 },
-                // US with time: 12/31/2024 14:30:45
+                // US with time: 12/31/2024 14:30:45 (MUST BE BEFORE US format without time!)
                 { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'MM-DD-YYYY HH:mm:ss', separator: null, priority: 2 },
+                // ISO format: 2024-12-31 or 2024/12/31 (without time)
+                { regex: /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/, format: 'YYYY-MM-DD', separator: null, priority: 1 },
+                // European format: 31.12.2024 (dot separator = European)
+                { regex: /(\d{1,2})\.(\d{1,2})\.(\d{4})/, format: 'DD.MM.YYYY', separator: '.', priority: 2 },
+                // Ambiguous slash format: could be DD/MM/YYYY or MM/DD/YYYY
+                // Prioritize DD/MM/YYYY (European) when first number > 12
+                { regex: /^(1[3-9]|[2-3]\d)[\/](\d{1,2})[\/](\d{4})/, format: 'DD-MM-YYYY', separator: '/', priority: 2 },
+                // US format: 12/31/2024 or 12-31-2024 (only when first number <= 12)
+                { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/, format: 'MM-DD-YYYY', separator: null, priority: 3 },
                 // Textual dates: "8 Nov", "Nov 8", "November 15", "15 September", "September 16, 1961"
                 { regex: /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i, format: 'DD Month', separator: null, priority: 4 },
                 { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i, format: 'Month DD', separator: null, priority: 4 },
@@ -253,7 +257,7 @@
 
     // تابع تبدیل نام ماه تنها (مثل "Nov" یا "October")
     // Convert standalone month names like "Nov" or "October"
-    function convertStandaloneMonth(monthStr) {
+    function convertStandaloneMonth(monthStr, originalText, offset) {
         try {
             if (!monthStr || typeof monthStr !== 'string') {
                 console.warn('⚠️ convertStandaloneMonth: Invalid input', monthStr);
@@ -273,6 +277,16 @@
                 };
                 
                 const jalaliMonth = approximateJalaliMonth[monthNumber];
+                
+                // Check if Persian month is already present after this position
+                // بررسی اینکه آیا ماه شمسی قبلاً بعد از این موقعیت وجود دارد
+                if (originalText && offset !== undefined) {
+                    const textAfter = originalText.substring(offset + monthName.length, offset + monthName.length + 20);
+                    // If Persian month already exists in parentheses, don't convert
+                    if (textAfter.includes(`(${jalaliMonth})`)) {
+                        return monthName;
+                    }
+                }
                 
                 // نمایش هر دو نام به صورت: "Nov (آبان)"
                 return `${monthName} (${jalaliMonth})`;
@@ -355,6 +369,14 @@
                 return dateStr;
             }
             
+            // Skip if already a Jalali date (YYYY/MM/DD with year > 1300)
+            // رد کردن تاریخ‌های شمسی که قبلاً تبدیل شده‌اند
+            // Updated pattern to also match timestamps like "1403/08/26 14:30:45"
+            const jalaliPattern = /^(1[3-4]\d{2})[\/](0?[1-9]|1[0-2])[\/](0?[1-9]|[12]\d|3[01])(\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?$/;
+            if (jalaliPattern.test(dateStr.trim())) {
+                return dateStr; // Already converted to Jalali
+            }
+            
             const detected = detectDateFormat(dateStr.trim());
             if (!detected) {
                 console.warn('⚠️ convertDateToJalali: No format detected', dateStr);
@@ -379,6 +401,7 @@
                 hour = match[4] ? parseInt(match[4]) : null;
                 minute = match[5] ? parseInt(match[5]) : null;
                 second = match[6] ? parseInt(match[6]) : null;
+                console.log(`🔍 Extracted (YYYY format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
             } else if (format.startsWith('MM')) {
                 month = parseInt(match[1]);
                 day = parseInt(match[2]);
@@ -386,10 +409,15 @@
                 hour = match[4] ? parseInt(match[4]) : null;
                 minute = match[5] ? parseInt(match[5]) : null;
                 second = match[6] ? parseInt(match[6]) : null;
+                console.log(`🔍 Extracted (MM format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
             } else if (format.startsWith('DD')) {
                 day = parseInt(match[1]);
                 month = parseInt(match[2]);
                 year = parseInt(match[3]);
+                hour = match[4] ? parseInt(match[4]) : null;
+                minute = match[5] ? parseInt(match[5]) : null;
+                second = match[6] ? parseInt(match[6]) : null;
+                console.log(`🔍 Extracted (DD format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
             }
 
             // Validate parsed values
@@ -398,10 +426,30 @@
                 return dateStr;
             }
 
-            // بررسی اعتبار تاریخ
-            // Validate date
-            if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
-                console.warn('⚠️ convertDateToJalali: Date out of valid range', { year, month, day, dateStr });
+            // بررسی اعتبار تاریخ میلادی
+            // Validate Gregorian date
+            if (year < 1900 || year > 2100) {
+                console.warn('⚠️ convertDateToJalali: Year out of valid range (1900-2100)', { year, month, day, dateStr });
+                return dateStr;
+            }
+            
+            // If month or day are invalid, this might be a misdetected format
+            // اگر ماه یا روز نامعتبر است، احتمالاً فرمت اشتباه تشخیص داده شده
+            if (month < 1 || month > 12) {
+                // Try swapping day and month (DD/MM vs MM/DD confusion)
+                if (day >= 1 && day <= 12 && month >= 1 && month <= 31) {
+                    const temp = month;
+                    month = day;
+                    day = temp;
+                    console.log('🔄 Swapped day and month', { original: dateStr, newMonth: month, newDay: day });
+                } else {
+                    console.warn('⚠️ convertDateToJalali: Month out of valid range', { year, month, day, dateStr });
+                    return dateStr;
+                }
+            }
+            
+            if (day < 1 || day > 31) {
+                console.warn('⚠️ convertDateToJalali: Day out of valid range', { year, month, day, dateStr });
                 return dateStr;
             }
 
@@ -431,8 +479,10 @@
                 const mm = minute.toString().padStart(2, '0');
                 const ss = second !== null ? ':' + second.toString().padStart(2, '0') : '';
                 result += ` ${hh}:${mm}${ss}`;
+                console.log(`⏰ Time preserved: ${dateStr} → ${result} (hour=${hour}, min=${minute}, sec=${second})`);
             }
 
+            console.log(`📅 Conversion: ${dateStr} → ${result}`);
             return result;
         } catch (error) {
             console.error('❌ convertDateToJalali: Unexpected error', error, dateStr);
@@ -448,9 +498,27 @@
             
             const originalText = node.nodeValue;
             
-            // بررسی اینکه آیا این node قبلاً پردازش شده است
-            // Check if this node was already processed
-            if (node._dateConverted) return;
+            // Check if this text contains Persian dates (already converted)
+            // بررسی اینکه آیا این متن شامل تاریخ شمسی است (قبلاً تبدیل شده)
+            const hasPersianDate = /\d{4}\/\d{2}\/\d{2}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/.test(originalText);
+            
+            // Check if text contains Persian characters (likely already converted)
+            // بررسی اینکه آیا متن شامل حروف فارسی است (احتمالاً قبلاً تبدیل شده)
+            const hasPersianChars = /[\u0600-\u06FF]/.test(originalText);
+            
+            // Skip if already contains Persian dates to avoid re-conversion
+            // رد کردن اگر قبلاً شامل تاریخ شمسی است تا از تبدیل مجدد جلوگیری شود
+            if (hasPersianDate && originalText.indexOf('/') > -1) {
+                // But allow if there are also Gregorian dates present
+                const hasGregorianPattern = /\d{4}[-]\d{1,2}[-]\d{1,2}|\d{1,2}[-]\d{1,2}[-]\d{4}/.test(originalText);
+                if (!hasGregorianPattern) return;
+            }
+            
+            // If text has Persian chars and month name pattern like "Sep (مهر)", skip it
+            // اگر متن دارای حروف فارسی و الگوی نام ماه مثل "Sep (مهر)" باشد، رد کن
+            if (hasPersianChars && /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\s*\([^)]*[\u0600-\u06FF]/i.test(originalText)) {
+                return; // Already converted month names, skip
+            }
             
             let newText = originalText;
 
@@ -483,7 +551,7 @@
                 // بررسی اینکه آیا این ماه قبلاً در یک تاریخ کامل پردازش شده یا نه
                 // Check if this month is not already part of a processed date
                 const before = newText.substring(Math.max(0, offset - 3), offset);
-                const after = newText.substring(offset + match.length, Math.min(newText.length, offset + match.length + 3));
+                const after = newText.substring(offset + match.length, Math.min(newText.length, offset + match.length + 20));
                 
                 // اگر قبل یا بعد از آن عدد یا کاما باشد، این قسمت از یک تاریخ کامل است
                 // If there's a number or comma before or after, it's part of a full date
@@ -491,21 +559,19 @@
                     return match; // تغییر نده
                 }
                 
-                return convertStandaloneMonth(match);
+                // اگر بعد از آن قبلاً پرانتز با متن فارسی وجود دارد، تغییر نده
+                // If there's already a parenthesis with Persian text after it, don't change
+                if (/^\s*\([^)]*[\u0600-\u06FF]/.test(after)) {
+                    return match; // Already converted
+                }
+                
+                return convertStandaloneMonth(match, newText, offset);
             });
 
             // اگر متن تغییر کرده، به‌روزرسانی کن
             // If text changed, update it
             if (newText !== originalText) {
                 node.nodeValue = newText;
-                // علامت‌گذاری که این node پردازش شده است
-                // Mark this node as processed
-                try {
-                    node._dateConverted = true;
-                } catch (e) {
-                    // برخی از node ها read-only هستند
-                    // Some nodes are read-only
-                }
             }
         } catch (error) {
             console.error('❌ processTextNode: Unexpected error', error, node);
@@ -521,9 +587,17 @@
                 return;
             }
             
+            // Skip input elements, textarea, and select to preserve user input
+            // رد کردن المان‌های ورودی برای حفظ داده‌های کاربر
+            const tagName = element.tagName ? element.tagName.toLowerCase() : '';
+            if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+                console.log('⏭️ Skipping input element to preserve user data:', tagName);
+                return;
+            }
+            
             // اتریبیوت‌هایی که ممکن است تاریخ داشته باشند
-            // Attributes that might contain dates
-            const dateAttributes = ['value', 'placeholder', 'title', 'data-date', 'datetime'];
+            // Attributes that might contain dates (excluding value to avoid input interference)
+            const dateAttributes = ['title', 'data-date', 'datetime'];
             
             for (let attr of dateAttributes) {
                 if (element.hasAttribute(attr)) {
@@ -553,14 +627,23 @@
             // پردازش نودهای متنی
             // Process text nodes
             if (node.nodeType === Node.TEXT_NODE) {
+                // Skip text nodes inside input, textarea, select elements
+                // رد کردن نودهای متنی داخل المان‌های ورودی
+                const parentTag = node.parentNode ? node.parentNode.tagName : '';
+                if (parentTag && (parentTag === 'INPUT' || parentTag === 'TEXTAREA' || parentTag === 'SELECT')) {
+                    return;
+                }
                 processTextNode(node);
             } 
             // پردازش المان‌ها
             // Process elements
             else if (node.nodeType === Node.ELEMENT_NODE) {
-                // نادیده گرفتن تگ‌های script و style
-                // Skip script and style tags
-                if (node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
+                const tagName = node.tagName ? node.tagName.toUpperCase() : '';
+                
+                // نادیده گرفتن تگ‌های script، style و المان‌های ورودی
+                // Skip script, style tags and input elements
+                if (tagName !== 'SCRIPT' && tagName !== 'STYLE' && 
+                    tagName !== 'INPUT' && tagName !== 'TEXTAREA' && tagName !== 'SELECT') {
                     processElementAttributes(node);
                     
                     // پردازش فرزندان
@@ -653,19 +736,29 @@
             mutationTimeout = setTimeout(() => {
                 mutations.forEach((mutation) => {
                     try {
-                        if (!mutation || !mutation.addedNodes) {
-                            return;
+                        // Handle added nodes
+                        // مدیریت نودهای اضافه شده
+                        if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+                            mutation.addedNodes.forEach((node) => {
+                                try {
+                                    if (node && (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE)) {
+                                        traverseDOM(node);
+                                    }
+                                } catch (nodeError) {
+                                    console.error('❌ MutationObserver: Error processing added node', nodeError, node);
+                                }
+                            });
                         }
                         
-                        mutation.addedNodes.forEach((node) => {
+                        // Handle character data changes (text content updates)
+                        // مدیریت تغییرات محتوای متنی
+                        if (mutation.type === 'characterData' && mutation.target) {
                             try {
-                                if (node && (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE)) {
-                                    traverseDOM(node);
-                                }
-                            } catch (nodeError) {
-                                console.error('❌ MutationObserver: Error processing added node', nodeError, node);
+                                processTextNode(mutation.target);
+                            } catch (charError) {
+                                console.error('❌ MutationObserver: Error processing character data', charError);
                             }
-                        });
+                        }
                     } catch (mutationError) {
                         console.error('❌ MutationObserver: Error processing mutation', mutationError, mutation);
                     }
@@ -693,9 +786,34 @@
         console.error('❌ MutationObserver: Failed to start observer', error);
     }
 
+    // Listen for custom re-conversion events from content script
+    // گوش دادن به رویدادهای سفارشی تبدیل مجدد از content script
+    document.addEventListener('gdate2pdate-reconvert', function(event) {
+        try {
+            console.log('🔄 GDate2PDate: Re-conversion triggered by event', event.detail);
+            
+            // Re-run conversion on the entire page
+            // اجرای مجدد تبدیل در کل صفحه
+            if (!isProcessing) {
+                convertAllDates();
+            } else {
+                console.log('⏳ GDate2PDate: Conversion already in progress, will retry...');
+                setTimeout(function() {
+                    if (!isProcessing) {
+                        convertAllDates();
+                    }
+                }, 500);
+            }
+        } catch (error) {
+            console.error('❌ GDate2PDate: Error handling reconvert event', error);
+        }
+    });
+
     console.log('📅 سیستم تبدیل خودکار تاریخ فعال شد');
     console.log('📅 Automatic date conversion system activated');
     console.log('🎯 فرمت خروجی: همیشه YYYY/MM/DD (شمسی)');
     console.log('🎯 Output format: Always YYYY/MM/DD (Jalali)');
+    console.log('👂 Listening for late-loading content events');
+    console.log('👂 گوش دادن به رویدادهای محتوای دیررس');
 
 })();
