@@ -140,8 +140,13 @@
             }
             
             // فرمت‌های مختلف تاریخ میلادی
+            // IMPORTANT: Patterns with time MUST come BEFORE patterns without time!
             const patterns = [
-                // ISO format: 2024-12-31 or 2024/12/31
+                // With time: 2024-12-31 14:30:45 or 2024/12/31 14:30:45 (MUST BE FIRST!)
+                { regex: /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'YYYY-MM-DD HH:mm:ss', separator: null, priority: 1 },
+                // US with time: 12/31/2024 14:30:45 (MUST BE BEFORE US format without time!)
+                { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'MM-DD-YYYY HH:mm:ss', separator: null, priority: 2 },
+                // ISO format: 2024-12-31 or 2024/12/31 (without time)
                 { regex: /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/, format: 'YYYY-MM-DD', separator: null, priority: 1 },
                 // European format: 31.12.2024 (dot separator = European)
                 { regex: /(\d{1,2})\.(\d{1,2})\.(\d{4})/, format: 'DD.MM.YYYY', separator: '.', priority: 2 },
@@ -150,10 +155,6 @@
                 { regex: /^(1[3-9]|[2-3]\d)[\/](\d{1,2})[\/](\d{4})/, format: 'DD-MM-YYYY', separator: '/', priority: 2 },
                 // US format: 12/31/2024 or 12-31-2024 (only when first number <= 12)
                 { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/, format: 'MM-DD-YYYY', separator: null, priority: 3 },
-                // With time: 2024-12-31 14:30:45 or 2024/12/31 14:30:45
-                { regex: /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'YYYY-MM-DD HH:mm:ss', separator: null, priority: 1 },
-                // US with time: 12/31/2024 14:30:45
-                { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/, format: 'MM-DD-YYYY HH:mm:ss', separator: null, priority: 2 },
                 // Textual dates: "8 Nov", "Nov 8", "November 15", "15 September", "September 16, 1961"
                 { regex: /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i, format: 'DD Month', separator: null, priority: 4 },
                 { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i, format: 'Month DD', separator: null, priority: 4 },
@@ -370,7 +371,8 @@
             
             // Skip if already a Jalali date (YYYY/MM/DD with year > 1300)
             // رد کردن تاریخ‌های شمسی که قبلاً تبدیل شده‌اند
-            const jalaliPattern = /^(1[3-4]\d{2})[\/](0?[1-9]|1[0-2])[\/](0?[1-9]|[12]\d|3[01])$/;
+            // Updated pattern to also match timestamps like "1403/08/26 14:30:45"
+            const jalaliPattern = /^(1[3-4]\d{2})[\/](0?[1-9]|1[0-2])[\/](0?[1-9]|[12]\d|3[01])(\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?$/;
             if (jalaliPattern.test(dateStr.trim())) {
                 return dateStr; // Already converted to Jalali
             }
@@ -498,7 +500,7 @@
             
             // Check if this text contains Persian dates (already converted)
             // بررسی اینکه آیا این متن شامل تاریخ شمسی است (قبلاً تبدیل شده)
-            const hasPersianDate = /\d{4}\/\d{2}\/\d{2}/.test(originalText);
+            const hasPersianDate = /\d{4}\/\d{2}\/\d{2}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/.test(originalText);
             
             // Check if text contains Persian characters (likely already converted)
             // بررسی اینکه آیا متن شامل حروف فارسی است (احتمالاً قبلاً تبدیل شده)
