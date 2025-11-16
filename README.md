@@ -9,7 +9,7 @@
 **🔄 Automatic Gregorian to Jalali (Persian) Date Conversion on Any Webpage**
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore)
-[![Version](https://img.shields.io/badge/Version-1.0.0-success?style=for-the-badge)](https://github.com/yourusername/GDate2PDate)
+[![Version](https://img.shields.io/badge/Version-04.08.25-success?style=for-the-badge)](https://github.com/yourusername/GDate2PDate)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![Downloads](https://img.shields.io/badge/Downloads-1K+-brightgreen?style=for-the-badge)](https://chrome.google.com/webstore)
 
