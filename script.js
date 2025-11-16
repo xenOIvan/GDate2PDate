@@ -662,6 +662,26 @@
         }
     }
 
+    // تابع بررسی اولیه وجود تاریخ در صفحه
+    // Quick check if page contains any dates
+    function hasDateContent() {
+        try {
+            const bodyText = document.body.innerText;
+            if (!bodyText) return false;
+            
+            // Sample first 10000 characters only for performance
+            const sample = bodyText.substring(0, 10000);
+            
+            // Quick regex check for date patterns
+            const hasDatePattern = /\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{4}|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\b/i.test(sample);
+            
+            return hasDatePattern;
+        } catch (error) {
+            console.error('❌ hasDateContent: Error', error);
+            return true; // Proceed if check fails
+        }
+    }
+
     // تابع اصلی تبدیل تمام تاریخ‌ها
     // Main function to convert all dates
     function convertAllDates() {
@@ -673,31 +693,57 @@
                 return;
             }
             
+            // Validate document availability
+            if (!document || !document.body) {
+                console.error('❌ convertAllDates: Document or body not available');
+                return;
+            }
+            
+            // Early exit if no dates detected
+            // خروج سریع اگر تاریخی وجود ندارد
+            if (!hasDateContent()) {
+                console.log('⏭️ No dates detected, skipping conversion');
+                return;
+            }
+            
             isProcessing = true;
             
             console.log('🔄 شروع تبدیل تاریخ‌های میلادی به شمسی...');
             console.log('🔄 Starting Gregorian to Jalali date conversion...');
             
-            // Validate document availability
-            if (!document || !document.body) {
-                console.error('❌ convertAllDates: Document or body not available');
-                isProcessing = false;
-                return;
-            }
-            
             // مرحله 1: تشخیص فرمت رایج صفحه
             detectPageDateFormat();
             
-            // مرحله 2: تبدیل تمام تاریخ‌ها به فرمت استاندارد YYYY/MM/DD
-            traverseDOM(document.body);
-            
-            console.log('✅ تبدیل تاریخ‌ها با موفقیت انجام شد');
-            console.log('✅ Date conversion completed successfully');
-            console.log(`📅 تمام تاریخ‌ها به فرمت استاندارد شمسی (YYYY/MM/DD) تبدیل شدند`);
-            console.log(`📅 All dates converted to standard Jalali format (YYYY/MM/DD)`);
+            // مرحله 2: تبدیل تمام تاریخ‌ها با استفاده از requestIdleCallback
+            // Use requestIdleCallback for non-blocking processing
+            if (typeof requestIdleCallback !== 'undefined') {
+                requestIdleCallback(function() {
+                    try {
+                        traverseDOM(document.body);
+                        console.log('✅ تبدیل تاریخ‌ها با موفقیت انجام شد');
+                        console.log('✅ Date conversion completed successfully');
+                    } catch (error) {
+                        console.error('❌ traverseDOM error:', error);
+                    } finally {
+                        isProcessing = false;
+                    }
+                }, { timeout: 2000 });
+            } else {
+                // Fallback for browsers without requestIdleCallback
+                setTimeout(function() {
+                    try {
+                        traverseDOM(document.body);
+                        console.log('✅ تبدیل تاریخ‌ها با موفقیت انجام شد');
+                        console.log('✅ Date conversion completed successfully');
+                    } catch (error) {
+                        console.error('❌ traverseDOM error:', error);
+                    } finally {
+                        isProcessing = false;
+                    }
+                }, 100);
+            }
         } catch (error) {
             console.error('❌ convertAllDates: Critical error during conversion', error);
-        } finally {
             isProcessing = false;
         }
     }
@@ -720,12 +766,17 @@
     // رصد تغییرات DOM و تبدیل تاریخ‌های جدید
     // Monitor DOM changes and convert new dates
     let mutationTimeout = null;
+    let pendingMutations = [];
+    
     const observer = new MutationObserver((mutations) => {
         try {
             if (!mutations || !Array.isArray(mutations)) {
                 console.warn('⚠️ MutationObserver: Invalid mutations', mutations);
                 return;
             }
+            
+            // Add to pending queue
+            pendingMutations.push(...mutations);
             
             // Throttle mutations to prevent excessive processing
             // محدودسازی پردازش برای جلوگیری از اجرای بیش از حد
@@ -734,36 +785,43 @@
             }
             
             mutationTimeout = setTimeout(() => {
-                mutations.forEach((mutation) => {
+                // Process only if not currently processing
+                if (isProcessing) {
+                    pendingMutations = [];
+                    return;
+                }
+                
+                const mutationsToProcess = pendingMutations.slice(0, 50); // Limit batch size
+                pendingMutations = [];
+                
+                mutationsToProcess.forEach((mutation) => {
                     try {
-                        // Handle added nodes
-                        // مدیریت نودهای اضافه شده
+                        // Handle added nodes only
+                        // مدیریت فقط نودهای اضافه شده
                         if (mutation.addedNodes && mutation.addedNodes.length > 0) {
                             mutation.addedNodes.forEach((node) => {
                                 try {
-                                    if (node && (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE)) {
-                                        traverseDOM(node);
+                                    // Only process elements with significant content
+                                    if (node && node.nodeType === Node.ELEMENT_NODE) {
+                                        // Skip small or non-visible elements
+                                        if (node.textContent && node.textContent.length > 8) {
+                                            traverseDOM(node);
+                                        }
+                                    } else if (node && node.nodeType === Node.TEXT_NODE) {
+                                        if (node.nodeValue && node.nodeValue.length > 8) {
+                                            processTextNode(node);
+                                        }
                                     }
                                 } catch (nodeError) {
-                                    console.error('❌ MutationObserver: Error processing added node', nodeError, node);
+                                    console.error('❌ MutationObserver: Error processing added node', nodeError);
                                 }
                             });
                         }
-                        
-                        // Handle character data changes (text content updates)
-                        // مدیریت تغییرات محتوای متنی
-                        if (mutation.type === 'characterData' && mutation.target) {
-                            try {
-                                processTextNode(mutation.target);
-                            } catch (charError) {
-                                console.error('❌ MutationObserver: Error processing character data', charError);
-                            }
-                        }
                     } catch (mutationError) {
-                        console.error('❌ MutationObserver: Error processing mutation', mutationError, mutation);
+                        console.error('❌ MutationObserver: Error processing mutation', mutationError);
                     }
                 });
-            }, 100); // 100ms throttle
+            }, 500); // Increased throttle to 500ms
         } catch (error) {
             console.error('❌ MutationObserver: Critical error in callback', error);
         }
@@ -778,9 +836,9 @@
             observer.observe(document.body, {
                 childList: true,
                 subtree: true,
-                characterData: true
+                characterData: false  // Disable for better performance
             });
-            console.log('👀 MutationObserver started successfully');
+            console.log('👀 MutationObserver started successfully (optimized mode)');
         }
     } catch (error) {
         console.error('❌ MutationObserver: Failed to start observer', error);
