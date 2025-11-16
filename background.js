@@ -3,6 +3,27 @@
  * سرویس ورکر پس‌زمینه - مدیریت چرخه حیات افزونه
  */
 
+/**
+ * Update extension icon based on enabled/disabled state
+ * به‌روزرسانی آیکون افزونه بر اساس وضعیت فعال/غیرفعال
+ */
+function updateIcon(enabled) {
+  const iconSuffix = enabled ? '' : '-disabled';
+  
+  chrome.action.setIcon({
+    path: {
+      16: `icons/icon16${iconSuffix}.png`,
+      48: `icons/icon48${iconSuffix}.png`,
+      128: `icons/icon128${iconSuffix}.png`
+    }
+  }).then(() => {
+    console.log(`GDate2PDate: Icon updated to ${enabled ? 'enabled' : 'disabled'} state`);
+    console.log(`تبدیل تاریخ: آیکون به حالت ${enabled ? 'فعال' : 'غیرفعال'} تغییر کرد`);
+  }).catch((error) => {
+    console.error('GDate2PDate: Error updating icon:', error);
+  });
+}
+
 // Initialize extension on install
 // راه‌اندازی اولیه افزونه هنگام نصب
 chrome.runtime.onInstalled.addListener(function(details) {
@@ -19,7 +40,12 @@ chrome.runtime.onInstalled.addListener(function(details) {
       }, function() {
         console.log('GDate2PDate: Default settings initialized');
         console.log('تبدیل تاریخ: تنظیمات پیش‌فرض مقداردهی شد');
+        // Set icon to enabled state
+        updateIcon(true);
       });
+    } else {
+      // Set icon based on current state
+      updateIcon(result.enabled !== false);
     }
   });
 
@@ -46,6 +72,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     chrome.storage.sync.set({ enabled: request.enabled }, function() {
       console.log(`GDate2PDate: Extension ${request.enabled ? 'enabled' : 'disabled'}`);
       console.log(`تبدیل تاریخ: افزونه ${request.enabled ? 'فعال' : 'غیرفعال'} شد`);
+      
+      // Update icon to reflect new state
+      // به‌روزرسانی آیکون برای نمایش وضعیت جدید
+      updateIcon(request.enabled);
       
       // Reload only current active tab to apply changes
       // بارگذاری مجدد فقط تب فعال فعلی برای اعمال تغییرات
@@ -100,3 +130,12 @@ chrome.action.onClicked.addListener(function(tab) {
 
 console.log('GDate2PDate: Background service worker initialized');
 console.log('تبدیل تاریخ: سرویس ورکر پس‌زمینه راه‌اندازی شد');
+
+// Initialize icon on startup
+// راه‌اندازی آیکون هنگام شروع
+chrome.storage.sync.get(['enabled'], function(result) {
+  const enabled = result.enabled !== false; // Default to enabled
+  updateIcon(enabled);
+  console.log(`GDate2PDate: Startup - Extension is ${enabled ? 'enabled' : 'disabled'}`);
+  console.log(`تبدیل تاریخ: راه‌اندازی - افزونه ${enabled ? 'فعال' : 'غیرفعال'} است`);
+});
