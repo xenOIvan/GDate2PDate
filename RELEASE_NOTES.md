@@ -1,6 +1,6 @@
 # Release Notes | یادداشت‌های انتشار
 
-## **Version 1.0.0** - November 16, 2025
+## **Version 04.08.25** - November 16, 2025
 
 ### ✨ New Features
 - Automatically converts Gregorian dates to Jalali (Persian) format on any webpage
@@ -28,7 +28,7 @@
 
 ---
 
-## **نسخه 1.0.0** - ۲۶ آبان ۱۴۰۳
+## **نسخه 04.08.25** - ۲۶ آبان ۱۴۰۳
 
 ### ✨ ویژگی‌های جدید
 - تبدیل خودکار تاریخ‌های میلادی به شمسی در هر صفحه وب
