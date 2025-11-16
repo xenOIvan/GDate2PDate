@@ -155,10 +155,12 @@
                 { regex: /^(1[3-9]|[2-3]\d)[\/](\d{1,2})[\/](\d{4})/, format: 'DD-MM-YYYY', separator: '/', priority: 2 },
                 // US format: 12/31/2024 or 12-31-2024 (only when first number <= 12)
                 { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/, format: 'MM-DD-YYYY', separator: null, priority: 3 },
-                // Textual dates: "8 Nov", "Nov 8", "November 15", "15 September", "September 16, 1961"
-                { regex: /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i, format: 'DD Month', separator: null, priority: 4 },
-                { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i, format: 'Month DD', separator: null, priority: 4 },
-                { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/i, format: 'Month DD, YYYY', separator: null, priority: 4 }
+                // Textual dates: "15 Jan 2024", "8 Nov", "Nov 8", "November 15", "15 September", "September 16, 1961"
+                // IMPORTANT: Patterns WITH year must come BEFORE patterns WITHOUT year!
+                { regex: /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{4})\b/i, format: 'DD Month YYYY', separator: null, priority: 4 },
+                { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/i, format: 'Month DD, YYYY', separator: null, priority: 4 },
+                { regex: /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i, format: 'DD Month', separator: null, priority: 5 },
+                { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i, format: 'Month DD', separator: null, priority: 5 }
             ];
 
             for (let pattern of patterns) {
@@ -208,27 +210,56 @@
             
             let day, month, year;
             
-            // الگوی "September 16, 1961" (Month DD, YYYY)
+            // Pattern 1: "September 16, 1961" (Month DD, YYYY)
             let match = dateStr.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/i);
             if (match) {
                 month = getMonthNumber(match[1]);
                 day = parseInt(match[2]);
                 year = parseInt(match[3]);
             } else {
-                // الگوی "8 Nov" یا "15 September" (DD Month)
-                match = dateStr.match(/\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i);
-                
+                // Pattern 2: "15 Jan 2024" (DD Month YYYY - no comma)
+                match = dateStr.match(/\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{4})\b/i);
                 if (match) {
                     day = parseInt(match[1]);
                     month = getMonthNumber(match[2]);
-                    year = new Date().getFullYear(); // استفاده از سال جاری
+                    year = parseInt(match[3]);
                 } else {
-                    // الگوی "Nov 8" یا "September 15" (Month DD)
-                    match = dateStr.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i);
+                    // Pattern 3: "8 Nov" or "15 September" (DD Month - no year)
+                    match = dateStr.match(/\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i);
+                    
                     if (match) {
-                        month = getMonthNumber(match[1]);
-                        day = parseInt(match[2]);
-                        year = new Date().getFullYear(); // استفاده از سال جاری
+                        day = parseInt(match[1]);
+                        month = getMonthNumber(match[2]);
+                        // Use current year for dates without year
+                        const now = new Date();
+                        year = now.getFullYear();
+                        
+                        // If the date hasn't occurred yet this year, it might refer to last year
+                        // For example: If today is Jan 2025 and we see "Dec 31", it likely means Dec 31, 2024
+                        const currentMonth = now.getMonth() + 1;
+                        const currentDay = now.getDate();
+                        if (month > currentMonth || (month === currentMonth && day > currentDay)) {
+                            // Date is in the future this year - might actually refer to last year
+                            // But we'll keep current year as default behavior
+                        }
+                    } else {
+                        // Pattern 4: "Nov 8" or "September 15" (Month DD - no year)
+                        match = dateStr.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i);
+                        if (match) {
+                            month = getMonthNumber(match[1]);
+                            day = parseInt(match[2]);
+                            // Use current year for dates without year
+                            const now = new Date();
+                            year = now.getFullYear();
+                            
+                            // Same logic as above for future dates
+                            const currentMonth = now.getMonth() + 1;
+                            const currentDay = now.getDate();
+                            if (month > currentMonth || (month === currentMonth && day > currentDay)) {
+                                // Date is in the future this year - might actually refer to last year
+                                // But we'll keep current year as default behavior
+                            }
+                        }
                     }
                 }
             }
@@ -386,9 +417,9 @@
             const { match, format } = detected;
             let year, month, day, hour, minute, second;
 
-            // بررسی تاریخ‌های متنی (مثل "8 Nov" یا "November 15" یا "September 16, 1961")
-            // Check for textual dates like "8 Nov" or "November 15" or "September 16, 1961"
-            if (format === 'DD Month' || format === 'Month DD' || format === 'Month DD, YYYY') {
+            // بررسی تاریخ‌های متنی (مثل "8 Nov" یا "November 15" یا "15 Jan 2024" یا "September 16, 1961")
+            // Check for textual dates like "8 Nov" or "November 15" or "15 Jan 2024" or "September 16, 1961"
+            if (format === 'DD Month' || format === 'Month DD' || format === 'DD Month YYYY' || format === 'Month DD, YYYY') {
                 return convertTextualDate(dateStr);
             }
 
@@ -498,6 +529,33 @@
             
             const originalText = node.nodeValue;
             
+            // Check parent element - skip if it's a time-related element
+            // بررسی المان والد - رد کردن اگر المان مربوط به زمان است
+            if (node.parentNode && node.parentNode.tagName) {
+                const parentTag = node.parentNode.tagName.toLowerCase();
+                const parentClass = node.parentNode.className || '';
+                
+                // Skip <time>, <relative-time>, or elements with time-related classes
+                if (parentTag === 'time' || 
+                    parentTag === 'relative-time' || 
+                    /time|date|timestamp|relative|ago/i.test(parentClass)) {
+                    return; // Skip time elements
+                }
+            }
+            
+            // Skip relative time phrases ("1 hour ago", "2 min ago", "2 minutes ago", etc.)
+            // رد کردن عبارات زمان نسبی ("1 hour ago", "2 min ago", "2 minutes ago" و غیره)
+            const relativeTimePattern = /\b\d+\s*(second|seconds|sec|secs|minute|minutes|min|mins|hour|hours|hr|hrs|day|days|week|weeks|month|months|year|years|yr|yrs)\s+(ago|from now|later|earlier|before|after)\b/i;
+            if (relativeTimePattern.test(originalText)) {
+                return; // Skip relative time expressions
+            }
+            
+            // Also skip "just now", "moments ago", "yesterday", "today", "tomorrow", "an hour ago", "a minute ago"
+            const commonTimePattern = /\b(just now|moments? ago|yesterday|today|tomorrow|last (week|month|year)|next (week|month|year)|an? (second|minute|hour|day|week|month|year) ago)\b/i;
+            if (commonTimePattern.test(originalText)) {
+                return; // Skip common time expressions
+            }
+            
             // Check if this text contains Persian dates (already converted)
             // بررسی اینکه آیا این متن شامل تاریخ شمسی است (قبلاً تبدیل شده)
             const hasPersianDate = /\d{4}\/\d{2}\/\d{2}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/.test(originalText);
@@ -528,16 +586,32 @@
                 /\d{4}[-\/]\d{1,2}[-\/]\d{1,2}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/g,
                 /\d{1,2}[-\/]\d{1,2}[-\/]\d{4}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/g,
                 /\d{1,2}\.\d{1,2}\.\d{4}/g,
-                // تاریخ‌های متنی با سال: "September 16, 1961"
+                // تاریخ‌های متنی با سال: "September 16, 1961" و "15 Jan 2024"
                 /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/gi,
-                // تاریخ‌های متنی بدون سال: "8 Nov", "November 15"
-                /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/gi,
-                /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/gi
+                /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{4})\b/gi,
+                // تاریخ‌های متنی بدون سال: "8 Nov", "November 15" (but not "8 hours ago")
+                /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)(?!\s+ago)\b/gi,
+                /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})(?!\s+ago)\b/gi
             ];
 
             for (let pattern of datePatterns) {
-                newText = newText.replace(pattern, (match) => {
-                    return convertDateToJalali(match);
+                newText = newText.replace(pattern, (match, ...args) => {
+                    // Get the full match string and its position
+                    const fullMatch = match;
+                    const offset = args[args.length - 2];
+                    const fullString = args[args.length - 1];
+                    
+                    // Check context before and after match to ensure it's not a relative time
+                    const contextBefore = fullString.substring(Math.max(0, offset - 20), offset);
+                    const contextAfter = fullString.substring(offset + fullMatch.length, Math.min(fullString.length, offset + fullMatch.length + 20));
+                    
+                    // Skip if it's part of a relative time expression
+                    if (/\b(second|minute|hour|day|week|month|year)s?\s*$/i.test(contextBefore) || 
+                        /^\s*(second|minute|hour|day|week|month|year)s?\s+(ago|from|later)/i.test(contextAfter)) {
+                        return fullMatch; // Don't convert
+                    }
+                    
+                    return convertDateToJalali(fullMatch);
                 });
             }
 
@@ -627,10 +701,11 @@
             // پردازش نودهای متنی
             // Process text nodes
             if (node.nodeType === Node.TEXT_NODE) {
-                // Skip text nodes inside input, textarea, select elements
-                // رد کردن نودهای متنی داخل المان‌های ورودی
+                // Skip text nodes inside input, textarea, select, time, relative-time elements
+                // رد کردن نودهای متنی داخل المان‌های ورودی و زمان
                 const parentTag = node.parentNode ? node.parentNode.tagName : '';
-                if (parentTag && (parentTag === 'INPUT' || parentTag === 'TEXTAREA' || parentTag === 'SELECT')) {
+                if (parentTag && (parentTag === 'INPUT' || parentTag === 'TEXTAREA' || parentTag === 'SELECT' || 
+                    parentTag === 'TIME' || parentTag === 'RELATIVE-TIME')) {
                     return;
                 }
                 processTextNode(node);
@@ -640,10 +715,11 @@
             else if (node.nodeType === Node.ELEMENT_NODE) {
                 const tagName = node.tagName ? node.tagName.toUpperCase() : '';
                 
-                // نادیده گرفتن تگ‌های script، style و المان‌های ورودی
-                // Skip script, style tags and input elements
+                // نادیده گرفتن تگ‌های script، style، time و المان‌های ورودی
+                // Skip script, style, time tags and input elements
                 if (tagName !== 'SCRIPT' && tagName !== 'STYLE' && 
-                    tagName !== 'INPUT' && tagName !== 'TEXTAREA' && tagName !== 'SELECT') {
+                    tagName !== 'INPUT' && tagName !== 'TEXTAREA' && tagName !== 'SELECT' &&
+                    tagName !== 'TIME' && tagName !== 'RELATIVE-TIME') {
                     processElementAttributes(node);
                     
                     // پردازش فرزندان
@@ -662,6 +738,26 @@
         }
     }
 
+    // تابع بررسی اولیه وجود تاریخ در صفحه
+    // Quick check if page contains any dates
+    function hasDateContent() {
+        try {
+            const bodyText = document.body.innerText;
+            if (!bodyText) return false;
+            
+            // Sample first 10000 characters only for performance
+            const sample = bodyText.substring(0, 10000);
+            
+            // Quick regex check for date patterns
+            const hasDatePattern = /\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{4}|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\b/i.test(sample);
+            
+            return hasDatePattern;
+        } catch (error) {
+            console.error('❌ hasDateContent: Error', error);
+            return true; // Proceed if check fails
+        }
+    }
+
     // تابع اصلی تبدیل تمام تاریخ‌ها
     // Main function to convert all dates
     function convertAllDates() {
@@ -673,31 +769,57 @@
                 return;
             }
             
+            // Validate document availability
+            if (!document || !document.body) {
+                console.error('❌ convertAllDates: Document or body not available');
+                return;
+            }
+            
+            // Early exit if no dates detected
+            // خروج سریع اگر تاریخی وجود ندارد
+            if (!hasDateContent()) {
+                console.log('⏭️ No dates detected, skipping conversion');
+                return;
+            }
+            
             isProcessing = true;
             
             console.log('🔄 شروع تبدیل تاریخ‌های میلادی به شمسی...');
             console.log('🔄 Starting Gregorian to Jalali date conversion...');
             
-            // Validate document availability
-            if (!document || !document.body) {
-                console.error('❌ convertAllDates: Document or body not available');
-                isProcessing = false;
-                return;
-            }
-            
             // مرحله 1: تشخیص فرمت رایج صفحه
             detectPageDateFormat();
             
-            // مرحله 2: تبدیل تمام تاریخ‌ها به فرمت استاندارد YYYY/MM/DD
-            traverseDOM(document.body);
-            
-            console.log('✅ تبدیل تاریخ‌ها با موفقیت انجام شد');
-            console.log('✅ Date conversion completed successfully');
-            console.log(`📅 تمام تاریخ‌ها به فرمت استاندارد شمسی (YYYY/MM/DD) تبدیل شدند`);
-            console.log(`📅 All dates converted to standard Jalali format (YYYY/MM/DD)`);
+            // مرحله 2: تبدیل تمام تاریخ‌ها با استفاده از requestIdleCallback
+            // Use requestIdleCallback for non-blocking processing
+            if (typeof requestIdleCallback !== 'undefined') {
+                requestIdleCallback(function() {
+                    try {
+                        traverseDOM(document.body);
+                        console.log('✅ تبدیل تاریخ‌ها با موفقیت انجام شد');
+                        console.log('✅ Date conversion completed successfully');
+                    } catch (error) {
+                        console.error('❌ traverseDOM error:', error);
+                    } finally {
+                        isProcessing = false;
+                    }
+                }, { timeout: 2000 });
+            } else {
+                // Fallback for browsers without requestIdleCallback
+                setTimeout(function() {
+                    try {
+                        traverseDOM(document.body);
+                        console.log('✅ تبدیل تاریخ‌ها با موفقیت انجام شد');
+                        console.log('✅ Date conversion completed successfully');
+                    } catch (error) {
+                        console.error('❌ traverseDOM error:', error);
+                    } finally {
+                        isProcessing = false;
+                    }
+                }, 100);
+            }
         } catch (error) {
             console.error('❌ convertAllDates: Critical error during conversion', error);
-        } finally {
             isProcessing = false;
         }
     }
@@ -720,12 +842,17 @@
     // رصد تغییرات DOM و تبدیل تاریخ‌های جدید
     // Monitor DOM changes and convert new dates
     let mutationTimeout = null;
+    let pendingMutations = [];
+    
     const observer = new MutationObserver((mutations) => {
         try {
             if (!mutations || !Array.isArray(mutations)) {
                 console.warn('⚠️ MutationObserver: Invalid mutations', mutations);
                 return;
             }
+            
+            // Add to pending queue
+            pendingMutations.push(...mutations);
             
             // Throttle mutations to prevent excessive processing
             // محدودسازی پردازش برای جلوگیری از اجرای بیش از حد
@@ -734,36 +861,43 @@
             }
             
             mutationTimeout = setTimeout(() => {
-                mutations.forEach((mutation) => {
+                // Process only if not currently processing
+                if (isProcessing) {
+                    pendingMutations = [];
+                    return;
+                }
+                
+                const mutationsToProcess = pendingMutations.slice(0, 50); // Limit batch size
+                pendingMutations = [];
+                
+                mutationsToProcess.forEach((mutation) => {
                     try {
-                        // Handle added nodes
-                        // مدیریت نودهای اضافه شده
+                        // Handle added nodes only
+                        // مدیریت فقط نودهای اضافه شده
                         if (mutation.addedNodes && mutation.addedNodes.length > 0) {
                             mutation.addedNodes.forEach((node) => {
                                 try {
-                                    if (node && (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE)) {
-                                        traverseDOM(node);
+                                    // Only process elements with significant content
+                                    if (node && node.nodeType === Node.ELEMENT_NODE) {
+                                        // Skip small or non-visible elements
+                                        if (node.textContent && node.textContent.length > 8) {
+                                            traverseDOM(node);
+                                        }
+                                    } else if (node && node.nodeType === Node.TEXT_NODE) {
+                                        if (node.nodeValue && node.nodeValue.length > 8) {
+                                            processTextNode(node);
+                                        }
                                     }
                                 } catch (nodeError) {
-                                    console.error('❌ MutationObserver: Error processing added node', nodeError, node);
+                                    console.error('❌ MutationObserver: Error processing added node', nodeError);
                                 }
                             });
                         }
-                        
-                        // Handle character data changes (text content updates)
-                        // مدیریت تغییرات محتوای متنی
-                        if (mutation.type === 'characterData' && mutation.target) {
-                            try {
-                                processTextNode(mutation.target);
-                            } catch (charError) {
-                                console.error('❌ MutationObserver: Error processing character data', charError);
-                            }
-                        }
                     } catch (mutationError) {
-                        console.error('❌ MutationObserver: Error processing mutation', mutationError, mutation);
+                        console.error('❌ MutationObserver: Error processing mutation', mutationError);
                     }
                 });
-            }, 100); // 100ms throttle
+            }, 500); // Increased throttle to 500ms
         } catch (error) {
             console.error('❌ MutationObserver: Critical error in callback', error);
         }
@@ -778,9 +912,9 @@
             observer.observe(document.body, {
                 childList: true,
                 subtree: true,
-                characterData: true
+                characterData: false  // Disable for better performance
             });
-            console.log('👀 MutationObserver started successfully');
+            console.log('👀 MutationObserver started successfully (optimized mode)');
         }
     } catch (error) {
         console.error('❌ MutationObserver: Failed to start observer', error);
