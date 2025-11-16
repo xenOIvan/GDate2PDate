@@ -155,10 +155,12 @@
                 { regex: /^(1[3-9]|[2-3]\d)[\/](\d{1,2})[\/](\d{4})/, format: 'DD-MM-YYYY', separator: '/', priority: 2 },
                 // US format: 12/31/2024 or 12-31-2024 (only when first number <= 12)
                 { regex: /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/, format: 'MM-DD-YYYY', separator: null, priority: 3 },
-                // Textual dates: "8 Nov", "Nov 8", "November 15", "15 September", "September 16, 1961"
-                { regex: /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i, format: 'DD Month', separator: null, priority: 4 },
-                { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i, format: 'Month DD', separator: null, priority: 4 },
-                { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/i, format: 'Month DD, YYYY', separator: null, priority: 4 }
+                // Textual dates: "15 Jan 2024", "8 Nov", "Nov 8", "November 15", "15 September", "September 16, 1961"
+                // IMPORTANT: Patterns WITH year must come BEFORE patterns WITHOUT year!
+                { regex: /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{4})\b/i, format: 'DD Month YYYY', separator: null, priority: 4 },
+                { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/i, format: 'Month DD, YYYY', separator: null, priority: 4 },
+                { regex: /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i, format: 'DD Month', separator: null, priority: 5 },
+                { regex: /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i, format: 'Month DD', separator: null, priority: 5 }
             ];
 
             for (let pattern of patterns) {
@@ -208,27 +210,56 @@
             
             let day, month, year;
             
-            // الگوی "September 16, 1961" (Month DD, YYYY)
+            // Pattern 1: "September 16, 1961" (Month DD, YYYY)
             let match = dateStr.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/i);
             if (match) {
                 month = getMonthNumber(match[1]);
                 day = parseInt(match[2]);
                 year = parseInt(match[3]);
             } else {
-                // الگوی "8 Nov" یا "15 September" (DD Month)
-                match = dateStr.match(/\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i);
-                
+                // Pattern 2: "15 Jan 2024" (DD Month YYYY - no comma)
+                match = dateStr.match(/\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{4})\b/i);
                 if (match) {
                     day = parseInt(match[1]);
                     month = getMonthNumber(match[2]);
-                    year = new Date().getFullYear(); // استفاده از سال جاری
+                    year = parseInt(match[3]);
                 } else {
-                    // الگوی "Nov 8" یا "September 15" (Month DD)
-                    match = dateStr.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i);
+                    // Pattern 3: "8 Nov" or "15 September" (DD Month - no year)
+                    match = dateStr.match(/\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i);
+                    
                     if (match) {
-                        month = getMonthNumber(match[1]);
-                        day = parseInt(match[2]);
-                        year = new Date().getFullYear(); // استفاده از سال جاری
+                        day = parseInt(match[1]);
+                        month = getMonthNumber(match[2]);
+                        // Use current year for dates without year
+                        const now = new Date();
+                        year = now.getFullYear();
+                        
+                        // If the date hasn't occurred yet this year, it might refer to last year
+                        // For example: If today is Jan 2025 and we see "Dec 31", it likely means Dec 31, 2024
+                        const currentMonth = now.getMonth() + 1;
+                        const currentDay = now.getDate();
+                        if (month > currentMonth || (month === currentMonth && day > currentDay)) {
+                            // Date is in the future this year - might actually refer to last year
+                            // But we'll keep current year as default behavior
+                        }
+                    } else {
+                        // Pattern 4: "Nov 8" or "September 15" (Month DD - no year)
+                        match = dateStr.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})\b/i);
+                        if (match) {
+                            month = getMonthNumber(match[1]);
+                            day = parseInt(match[2]);
+                            // Use current year for dates without year
+                            const now = new Date();
+                            year = now.getFullYear();
+                            
+                            // Same logic as above for future dates
+                            const currentMonth = now.getMonth() + 1;
+                            const currentDay = now.getDate();
+                            if (month > currentMonth || (month === currentMonth && day > currentDay)) {
+                                // Date is in the future this year - might actually refer to last year
+                                // But we'll keep current year as default behavior
+                            }
+                        }
                     }
                 }
             }
@@ -386,9 +417,9 @@
             const { match, format } = detected;
             let year, month, day, hour, minute, second;
 
-            // بررسی تاریخ‌های متنی (مثل "8 Nov" یا "November 15" یا "September 16, 1961")
-            // Check for textual dates like "8 Nov" or "November 15" or "September 16, 1961"
-            if (format === 'DD Month' || format === 'Month DD' || format === 'Month DD, YYYY') {
+            // بررسی تاریخ‌های متنی (مثل "8 Nov" یا "November 15" یا "15 Jan 2024" یا "September 16, 1961")
+            // Check for textual dates like "8 Nov" or "November 15" or "15 Jan 2024" or "September 16, 1961"
+            if (format === 'DD Month' || format === 'Month DD' || format === 'DD Month YYYY' || format === 'Month DD, YYYY') {
                 return convertTextualDate(dateStr);
             }
 
@@ -555,8 +586,9 @@
                 /\d{4}[-\/]\d{1,2}[-\/]\d{1,2}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/g,
                 /\d{1,2}[-\/]\d{1,2}[-\/]\d{4}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?/g,
                 /\d{1,2}\.\d{1,2}\.\d{4}/g,
-                // تاریخ‌های متنی با سال: "September 16, 1961"
+                // تاریخ‌های متنی با سال: "September 16, 1961" و "15 Jan 2024"
                 /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2}),\s+(\d{4})\b/gi,
+                /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{4})\b/gi,
                 // تاریخ‌های متنی بدون سال: "8 Nov", "November 15" (but not "8 hours ago")
                 /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)(?!\s+ago)\b/gi,
                 /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\s+(\d{1,2})(?!\s+ago)\b/gi
