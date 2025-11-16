@@ -78,42 +78,60 @@
    */
   function setupLateLoadingHandlers() {
     try {
+      let eventDebounceTimeout = null;
+      
+      function debounceConversionEvent(eventName, delay) {
+        console.log('GDate2PDate: ' + eventName + ' detected');
+        if (eventDebounceTimeout) {
+          clearTimeout(eventDebounceTimeout);
+        }
+        eventDebounceTimeout = setTimeout(triggerConversionEvent, delay);
+      }
+
       // Handle visibility changes (e.g., dashboard widgets loading when visible)
       // مدیریت تغییرات نمایش (مثلاً ویجت‌های داشبورد که هنگام نمایش بارگذاری می‌شوند)
       document.addEventListener('visibilitychange', function() {
         if (!document.hidden) {
-          console.log('GDate2PDate: Page became visible, triggering conversion check');
-          triggerConversionEvent();
+          debounceConversionEvent('Page became visible', 500);
         }
       });
 
       // Handle popstate events for SPAs
       // مدیریت رویدادهای popstate برای اپلیکیشن‌های تک‌صفحه‌ای
       window.addEventListener('popstate', function() {
-        console.log('GDate2PDate: Popstate event detected, triggering conversion');
-        setTimeout(triggerConversionEvent, 100);
+        debounceConversionEvent('Popstate event', 500);
       });
 
       // Handle hash changes
       // مدیریت تغییرات hash
       window.addEventListener('hashchange', function() {
-        console.log('GDate2PDate: Hash change detected, triggering conversion');
-        setTimeout(triggerConversionEvent, 100);
+        debounceConversionEvent('Hash change', 500);
       });
 
       // Monitor for large DOM updates (e.g., dashboard rendering)
       // رصد به‌روزرسانی‌های بزرگ DOM (مثلاً رندر داشبورد)
       let mutationCount = 0;
+      let mutationCheckTimeout = null;
+      
       const contentObserver = new MutationObserver(function(mutations) {
         mutationCount += mutations.length;
         
-        // If we detect many mutations, likely content has loaded
-        // اگر تعداد زیادی تغییر تشخیص دهیم، احتمالاً محتوا بارگذاری شده
-        if (mutationCount > 10) {
-          mutationCount = 0;
-          console.log('GDate2PDate: Large DOM update detected');
-          triggerConversionEvent();
+        // Throttle mutation checks
+        if (mutationCheckTimeout) {
+          clearTimeout(mutationCheckTimeout);
         }
+        
+        mutationCheckTimeout = setTimeout(function() {
+          // If we detect many mutations, likely content has loaded
+          // اگر تعداد زیادی تغییر تشخیص دهیم، احتمالاً محتوا بارگذاری شده
+          if (mutationCount > 50) {  // Increased threshold from 10 to 50
+            mutationCount = 0;
+            console.log('GDate2PDate: Large DOM update detected');
+            triggerConversionEvent();
+          } else {
+            mutationCount = 0;  // Reset if threshold not met
+          }
+        }, 1000);  // Check after 1 second of mutations
       });
 
       contentObserver.observe(document.body, {
@@ -121,11 +139,7 @@
         subtree: true
       });
 
-      // Periodic check for new content (fallback for complex SPAs)
-      // بررسی دوره‌ای برای محتوای جدید (پشتیبان برای اپلیکیشن‌های پیچیده)
-      setInterval(function() {
-        triggerConversionEvent();
-      }, 5000); // Check every 5 seconds
+      // REMOVED aggressive 5-second interval for better performance
 
       console.log('GDate2PDate: Late-loading handlers setup complete');
       
