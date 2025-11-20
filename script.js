@@ -15,9 +15,26 @@
     // بررسی پشتیبانی مرورگر
     // Browser support check
     if (typeof Node === 'undefined') {
-        console.error('❌ Browser does not support Node API');
+        if (typeof Logger !== 'undefined') {
+            Logger.error('❌ Browser does not support Node API');
+        } else {
+            log.error('❌ Browser does not support Node API');
+        }
         return;
     }
+
+    // Use Logger if available, fallback to console for errors
+    // استفاده از Logger در صورت وجود، بازگشت به console برای خطاها
+    const log = typeof Logger !== 'undefined' ? Logger : {
+        debug: () => {},
+        info: () => {},
+        warn: () => {},
+        error: console.error.bind(console),
+        conversion: () => {},
+        performance: () => {},
+        mutation: () => {},
+        format: () => {}
+    };
 
     // متغیر سراسری برای ذخیره فرمت تشخیص داده شده
     // Global variable to store detected format
@@ -67,27 +84,27 @@
             // اعتبارسنجی ورودی
             // Input validation
             if (typeof gy !== 'number' || typeof gm !== 'number' || typeof gd !== 'number') {
-                console.warn('⚠️ gregorianToJalali: Invalid input types', { gy, gm, gd });
+                log.warn('⚠️ gregorianToJalali: Invalid input types', { gy, gm, gd });
                 return null;
             }
             
             if (isNaN(gy) || isNaN(gm) || isNaN(gd)) {
-                console.warn('⚠️ gregorianToJalali: NaN values detected', { gy, gm, gd });
+                log.warn('⚠️ gregorianToJalali: NaN values detected', { gy, gm, gd });
                 return null;
             }
             
             if (gy < 1900 || gy > 2100) {
-                console.warn('⚠️ gregorianToJalali: Year out of range (1900-2100)', { gy });
+                log.warn('⚠️ gregorianToJalali: Year out of range (1900-2100)', { gy });
                 return null;
             }
             
             if (gm < 1 || gm > 12) {
-                console.warn('⚠️ gregorianToJalali: Month out of range (1-12)', { gm });
+                log.warn('⚠️ gregorianToJalali: Month out of range (1-12)', { gm });
                 return null;
             }
             
             if (gd < 1 || gd > 31) {
-                console.warn('⚠️ gregorianToJalali: Day out of range (1-31)', { gd });
+                log.warn('⚠️ gregorianToJalali: Day out of range (1-31)', { gd });
                 return null;
             }
             
@@ -125,7 +142,7 @@
             
             return { year: jy, month: jm, day: jd };
         } catch (error) {
-            console.error('❌ gregorianToJalali: Unexpected error', error, { gy, gm, gd });
+            log.error('❌ gregorianToJalali: Unexpected error', error, { gy, gm, gd });
             return null;
         }
     }
@@ -135,7 +152,7 @@
     function detectDateFormat(dateStr) {
         try {
             if (!dateStr || typeof dateStr !== 'string') {
-                console.warn('⚠️ detectDateFormat: Invalid input', dateStr);
+                log.warn('⚠️ detectDateFormat: Invalid input', dateStr);
                 return null;
             }
             
@@ -176,10 +193,10 @@
                 }
             }
             
-            console.warn('⚠️ detectDateFormat: No matching pattern found', dateStr);
+            log.warn('⚠️ detectDateFormat: No matching pattern found', dateStr);
             return null;
         } catch (error) {
-            console.error('❌ detectDateFormat: Unexpected error', error, dateStr);
+            log.error('❌ detectDateFormat: Unexpected error', error, dateStr);
             return null;
         }
     }
@@ -189,12 +206,12 @@
     function getMonthNumber(monthName) {
         try {
             if (!monthName || typeof monthName !== 'string') {
-                console.warn('⚠️ getMonthNumber: Invalid month name', monthName);
+                log.warn('⚠️ getMonthNumber: Invalid month name', monthName);
                 return null;
             }
             return gregorianMonths[monthName.toLowerCase()] || null;
         } catch (error) {
-            console.error('❌ getMonthNumber: Error processing month name', error, monthName);
+            log.error('❌ getMonthNumber: Error processing month name', error, monthName);
             return null;
         }
     }
@@ -204,7 +221,7 @@
     function convertTextualDate(dateStr) {
         try {
             if (!dateStr || typeof dateStr !== 'string') {
-                console.warn('⚠️ convertTextualDate: Invalid input', dateStr);
+                log.warn('⚠️ convertTextualDate: Invalid input', dateStr);
                 return dateStr;
             }
             
@@ -268,7 +285,7 @@
                 const jalali = gregorianToJalali(year, month, day);
                 
                 if (!jalali) {
-                    console.warn('⚠️ convertTextualDate: Conversion failed', { dateStr, year, month, day });
+                    log.warn('⚠️ convertTextualDate: Conversion failed', { dateStr, year, month, day });
                     return dateStr;
                 }
                 
@@ -281,7 +298,7 @@
             
             return dateStr;
         } catch (error) {
-            console.error('❌ convertTextualDate: Unexpected error', error, dateStr);
+            log.error('❌ convertTextualDate: Unexpected error', error, dateStr);
             return dateStr;
         }
     }
@@ -291,7 +308,7 @@
     function convertStandaloneMonth(monthStr, originalText, offset) {
         try {
             if (!monthStr || typeof monthStr !== 'string') {
-                console.warn('⚠️ convertStandaloneMonth: Invalid input', monthStr);
+                log.warn('⚠️ convertStandaloneMonth: Invalid input', monthStr);
                 return monthStr;
             }
             
@@ -325,7 +342,7 @@
             
             return monthStr;
         } catch (error) {
-            console.error('❌ convertStandaloneMonth: Unexpected error', error, monthStr);
+            log.error('❌ convertStandaloneMonth: Unexpected error', error, monthStr);
             return monthStr;
         }
     }
@@ -335,14 +352,14 @@
     function detectPageDateFormat() {
         try {
             if (!document || !document.body) {
-                console.warn('⚠️ detectPageDateFormat: Document or body not available');
+                log.warn('⚠️ detectPageDateFormat: Document or body not available');
                 return 'YYYY-MM-DD';
             }
             
             const bodyText = document.body.innerText;
             
             if (!bodyText || typeof bodyText !== 'string') {
-                console.warn('⚠️ detectPageDateFormat: Invalid body text');
+                log.warn('⚠️ detectPageDateFormat: Invalid body text');
                 return 'YYYY-MM-DD';
             }
             
@@ -381,12 +398,12 @@
             detectedPageFormat = mostCommonFormat;
             formatConfidence = maxCount;
 
-            console.log(`📊 فرمت تشخیص داده شده: ${mostCommonFormat} (تعداد: ${maxCount})`);
-            console.log(`📊 Detected format: ${mostCommonFormat} (count: ${maxCount})`);
+            log.debug(`📊 فرمت تشخیص داده شده: ${mostCommonFormat} (تعداد: ${maxCount})`);
+            log.debug(`📊 Detected format: ${mostCommonFormat} (count: ${maxCount})`);
             
             return mostCommonFormat;
         } catch (error) {
-            console.error('❌ detectPageDateFormat: Unexpected error', error);
+            log.error('❌ detectPageDateFormat: Unexpected error', error);
             return 'YYYY-MM-DD'; // Return default format on error
         }
     }
@@ -396,7 +413,7 @@
     function convertDateToJalali(dateStr) {
         try {
             if (!dateStr || typeof dateStr !== 'string') {
-                console.warn('⚠️ convertDateToJalali: Invalid input', dateStr);
+                log.warn('⚠️ convertDateToJalali: Invalid input', dateStr);
                 return dateStr;
             }
             
@@ -410,7 +427,7 @@
             
             const detected = detectDateFormat(dateStr.trim());
             if (!detected) {
-                console.warn('⚠️ convertDateToJalali: No format detected', dateStr);
+                log.warn('⚠️ convertDateToJalali: No format detected', dateStr);
                 return dateStr;
             }
 
@@ -432,7 +449,7 @@
                 hour = match[4] ? parseInt(match[4]) : null;
                 minute = match[5] ? parseInt(match[5]) : null;
                 second = match[6] ? parseInt(match[6]) : null;
-                console.log(`🔍 Extracted (YYYY format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
+                log.debug(`🔍 Extracted (YYYY format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
             } else if (format.startsWith('MM')) {
                 month = parseInt(match[1]);
                 day = parseInt(match[2]);
@@ -440,7 +457,7 @@
                 hour = match[4] ? parseInt(match[4]) : null;
                 minute = match[5] ? parseInt(match[5]) : null;
                 second = match[6] ? parseInt(match[6]) : null;
-                console.log(`🔍 Extracted (MM format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
+                log.debug(`🔍 Extracted (MM format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
             } else if (format.startsWith('DD')) {
                 day = parseInt(match[1]);
                 month = parseInt(match[2]);
@@ -448,19 +465,19 @@
                 hour = match[4] ? parseInt(match[4]) : null;
                 minute = match[5] ? parseInt(match[5]) : null;
                 second = match[6] ? parseInt(match[6]) : null;
-                console.log(`🔍 Extracted (DD format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
+                log.debug(`🔍 Extracted (DD format): Y=${year}, M=${month}, D=${day}, h=${hour}, m=${minute}, s=${second}`);
             }
 
             // Validate parsed values
             if (isNaN(year) || isNaN(month) || isNaN(day)) {
-                console.warn('⚠️ convertDateToJalali: Invalid parsed values (NaN)', { year, month, day, dateStr });
+                log.warn('⚠️ convertDateToJalali: Invalid parsed values (NaN)', { year, month, day, dateStr });
                 return dateStr;
             }
 
             // بررسی اعتبار تاریخ میلادی
             // Validate Gregorian date
             if (year < 1900 || year > 2100) {
-                console.warn('⚠️ convertDateToJalali: Year out of valid range (1900-2100)', { year, month, day, dateStr });
+                log.warn('⚠️ convertDateToJalali: Year out of valid range (1900-2100)', { year, month, day, dateStr });
                 return dateStr;
             }
             
@@ -472,15 +489,15 @@
                     const temp = month;
                     month = day;
                     day = temp;
-                    console.log('🔄 Swapped day and month', { original: dateStr, newMonth: month, newDay: day });
+                    log.debug('🔄 Swapped day and month', { original: dateStr, newMonth: month, newDay: day });
                 } else {
-                    console.warn('⚠️ convertDateToJalali: Month out of valid range', { year, month, day, dateStr });
+                    log.warn('⚠️ convertDateToJalali: Month out of valid range', { year, month, day, dateStr });
                     return dateStr;
                 }
             }
             
             if (day < 1 || day > 31) {
-                console.warn('⚠️ convertDateToJalali: Day out of valid range', { year, month, day, dateStr });
+                log.warn('⚠️ convertDateToJalali: Day out of valid range', { year, month, day, dateStr });
                 return dateStr;
             }
 
@@ -489,7 +506,7 @@
             const jalali = gregorianToJalali(year, month, day);
             
             if (!jalali) {
-                console.warn('⚠️ convertDateToJalali: Conversion returned null', { year, month, day, dateStr });
+                log.warn('⚠️ convertDateToJalali: Conversion returned null', { year, month, day, dateStr });
                 return dateStr;
             }
             
@@ -510,13 +527,13 @@
                 const mm = minute.toString().padStart(2, '0');
                 const ss = second !== null ? ':' + second.toString().padStart(2, '0') : '';
                 result += ` ${hh}:${mm}${ss}`;
-                console.log(`⏰ Time preserved: ${dateStr} → ${result} (hour=${hour}, min=${minute}, sec=${second})`);
+                log.debug(`⏰ Time preserved: ${dateStr} → ${result} (hour=${hour}, min=${minute}, sec=${second})`);
             }
 
-            console.log(`📅 Conversion: ${dateStr} → ${result}`);
+            log.debug(`📅 Conversion: ${dateStr} → ${result}`);
             return result;
         } catch (error) {
-            console.error('❌ convertDateToJalali: Unexpected error', error, dateStr);
+            log.error('❌ convertDateToJalali: Unexpected error', error, dateStr);
             return dateStr;
         }
     }
@@ -648,7 +665,7 @@
                 node.nodeValue = newText;
             }
         } catch (error) {
-            console.error('❌ processTextNode: Unexpected error', error, node);
+            log.error('❌ processTextNode: Unexpected error', error, node);
         }
     }
 
@@ -657,7 +674,7 @@
     function processElementAttributes(element) {
         try {
             if (!element || typeof element.hasAttribute !== 'function') {
-                console.warn('⚠️ processElementAttributes: Invalid element', element);
+                log.warn('⚠️ processElementAttributes: Invalid element', element);
                 return;
             }
             
@@ -665,7 +682,7 @@
             // رد کردن المان‌های ورودی برای حفظ داده‌های کاربر
             const tagName = element.tagName ? element.tagName.toLowerCase() : '';
             if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
-                console.log('⏭️ Skipping input element to preserve user data:', tagName);
+                log.debug('⏭️ Skipping input element to preserve user data:', tagName);
                 return;
             }
             
@@ -685,7 +702,7 @@
                 }
             }
         } catch (error) {
-            console.error('❌ processElementAttributes: Unexpected error', error, element);
+            log.error('❌ processElementAttributes: Unexpected error', error, element);
         }
     }
 
@@ -694,7 +711,7 @@
     function traverseDOM(node) {
         try {
             if (!node) {
-                console.warn('⚠️ traverseDOM: Invalid node (null/undefined)');
+                log.warn('⚠️ traverseDOM: Invalid node (null/undefined)');
                 return;
             }
             
@@ -733,7 +750,7 @@
                 }
             }
         } catch (error) {
-            console.error('❌ traverseDOM: Error processing node', error, node);
+            log.error('❌ traverseDOM: Error processing node', error, node);
             // Continue traversal despite error
         }
     }
@@ -753,7 +770,7 @@
             
             return hasDatePattern;
         } catch (error) {
-            console.error('❌ hasDateContent: Error', error);
+            log.error('❌ hasDateContent: Error', error);
             return true; // Proceed if check fails
         }
     }
@@ -765,27 +782,27 @@
             // جلوگیری از اجرای همزمان
             // Prevent concurrent execution
             if (isProcessing) {
-                console.warn('⚠️ convertAllDates: Already processing, skipping...');
+                log.warn('⚠️ convertAllDates: Already processing, skipping...');
                 return;
             }
             
             // Validate document availability
             if (!document || !document.body) {
-                console.error('❌ convertAllDates: Document or body not available');
+                log.error('❌ convertAllDates: Document or body not available');
                 return;
             }
             
             // Early exit if no dates detected
             // خروج سریع اگر تاریخی وجود ندارد
             if (!hasDateContent()) {
-                console.log('⏭️ No dates detected, skipping conversion');
+                log.debug('⏭️ No dates detected, skipping conversion');
                 return;
             }
             
             isProcessing = true;
             
-            console.log('🔄 شروع تبدیل تاریخ‌های میلادی به شمسی...');
-            console.log('🔄 Starting Gregorian to Jalali date conversion...');
+            log.debug('🔄 شروع تبدیل تاریخ‌های میلادی به شمسی...');
+            log.debug('🔄 Starting Gregorian to Jalali date conversion...');
             
             // مرحله 1: تشخیص فرمت رایج صفحه
             detectPageDateFormat();
@@ -796,10 +813,10 @@
                 requestIdleCallback(function() {
                     try {
                         traverseDOM(document.body);
-                        console.log('✅ تبدیل تاریخ‌ها با موفقیت انجام شد');
-                        console.log('✅ Date conversion completed successfully');
+                        log.debug('✅ تبدیل تاریخ‌ها با موفقیت انجام شد');
+                        log.debug('✅ Date conversion completed successfully');
                     } catch (error) {
-                        console.error('❌ traverseDOM error:', error);
+                        log.error('❌ traverseDOM error:', error);
                     } finally {
                         isProcessing = false;
                     }
@@ -809,17 +826,17 @@
                 setTimeout(function() {
                     try {
                         traverseDOM(document.body);
-                        console.log('✅ تبدیل تاریخ‌ها با موفقیت انجام شد');
-                        console.log('✅ Date conversion completed successfully');
+                        log.debug('✅ تبدیل تاریخ‌ها با موفقیت انجام شد');
+                        log.debug('✅ Date conversion completed successfully');
                     } catch (error) {
-                        console.error('❌ traverseDOM error:', error);
+                        log.error('❌ traverseDOM error:', error);
                     } finally {
                         isProcessing = false;
                     }
                 }, 100);
             }
         } catch (error) {
-            console.error('❌ convertAllDates: Critical error during conversion', error);
+            log.error('❌ convertAllDates: Critical error during conversion', error);
             isProcessing = false;
         }
     }
@@ -828,15 +845,15 @@
     // Execute conversion after page load
     try {
         if (!document) {
-            console.error('❌ Initialization: Document not available');
+            log.error('❌ Initialization: Document not available');
         } else if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', convertAllDates);
-            console.log('⏳ Waiting for DOMContentLoaded event...');
+            log.debug('⏳ Waiting for DOMContentLoaded event...');
         } else {
             convertAllDates();
         }
     } catch (error) {
-        console.error('❌ Initialization: Failed to setup conversion', error);
+        log.error('❌ Initialization: Failed to setup conversion', error);
     }
 
     // رصد تغییرات DOM و تبدیل تاریخ‌های جدید
@@ -847,7 +864,7 @@
     const observer = new MutationObserver((mutations) => {
         try {
             if (!mutations || !Array.isArray(mutations)) {
-                console.warn('⚠️ MutationObserver: Invalid mutations', mutations);
+                log.warn('⚠️ MutationObserver: Invalid mutations', mutations);
                 return;
             }
             
@@ -889,17 +906,17 @@
                                         }
                                     }
                                 } catch (nodeError) {
-                                    console.error('❌ MutationObserver: Error processing added node', nodeError);
+                                    log.error('❌ MutationObserver: Error processing added node', nodeError);
                                 }
                             });
                         }
                     } catch (mutationError) {
-                        console.error('❌ MutationObserver: Error processing mutation', mutationError);
+                        log.error('❌ MutationObserver: Error processing mutation', mutationError);
                     }
                 });
             }, 500); // Increased throttle to 500ms
         } catch (error) {
-            console.error('❌ MutationObserver: Critical error in callback', error);
+            log.error('❌ MutationObserver: Critical error in callback', error);
         }
     });
 
@@ -907,31 +924,31 @@
     // Start observing changes
     try {
         if (!document || !document.body) {
-            console.error('❌ MutationObserver: Cannot start - document.body not available');
+            log.error('❌ MutationObserver: Cannot start - document.body not available');
         } else {
             observer.observe(document.body, {
                 childList: true,
                 subtree: true,
                 characterData: false  // Disable for better performance
             });
-            console.log('👀 MutationObserver started successfully (optimized mode)');
+            log.debug('👀 MutationObserver started successfully (optimized mode)');
         }
     } catch (error) {
-        console.error('❌ MutationObserver: Failed to start observer', error);
+        log.error('❌ MutationObserver: Failed to start observer', error);
     }
 
     // Listen for custom re-conversion events from content script
     // گوش دادن به رویدادهای سفارشی تبدیل مجدد از content script
     document.addEventListener('gdate2pdate-reconvert', function(event) {
         try {
-            console.log('🔄 GDate2PDate: Re-conversion triggered by event', event.detail);
+            log.debug('🔄 GDate2PDate: Re-conversion triggered by event', event.detail);
             
             // Re-run conversion on the entire page
             // اجرای مجدد تبدیل در کل صفحه
             if (!isProcessing) {
                 convertAllDates();
             } else {
-                console.log('⏳ GDate2PDate: Conversion already in progress, will retry...');
+                log.debug('⏳ GDate2PDate: Conversion already in progress, will retry...');
                 setTimeout(function() {
                     if (!isProcessing) {
                         convertAllDates();
@@ -939,15 +956,15 @@
                 }, 500);
             }
         } catch (error) {
-            console.error('❌ GDate2PDate: Error handling reconvert event', error);
+            log.error('❌ GDate2PDate: Error handling reconvert event', error);
         }
     });
 
-    console.log('📅 سیستم تبدیل خودکار تاریخ فعال شد');
-    console.log('📅 Automatic date conversion system activated');
-    console.log('🎯 فرمت خروجی: همیشه YYYY/MM/DD (شمسی)');
-    console.log('🎯 Output format: Always YYYY/MM/DD (Jalali)');
-    console.log('👂 Listening for late-loading content events');
-    console.log('👂 گوش دادن به رویدادهای محتوای دیررس');
+    log.debug('📅 سیستم تبدیل خودکار تاریخ فعال شد');
+    log.debug('📅 Automatic date conversion system activated');
+    log.debug('🎯 فرمت خروجی: همیشه YYYY/MM/DD (شمسی)');
+    log.debug('🎯 Output format: Always YYYY/MM/DD (Jalali)');
+    log.debug('👂 Listening for late-loading content events');
+    log.debug('👂 گوش دادن به رویدادهای محتوای دیررس');
 
 })();

@@ -24,50 +24,64 @@
   });
 
   /**
+   * Inject a script file into the page context
+   * تزریق فایل اسکریپت به محیط صفحه
+   */
+  function injectScript(fileName, onLoadCallback) {
+    return new Promise((resolve, reject) => {
+      try {
+        const script = document.createElement('script');
+        script.src = chrome.runtime.getURL(fileName);
+        script.type = 'text/javascript';
+        
+        script.onerror = function() {
+          console.error(`GDate2PDate: Failed to load ${fileName}`);
+          reject(new Error(`Failed to load ${fileName}`));
+        };
+        
+        script.onload = function() {
+          console.log(`GDate2PDate: ${fileName} loaded successfully`);
+          if (onLoadCallback) onLoadCallback();
+          
+          // Remove script tag after loading to keep DOM clean
+          setTimeout(() => {
+            script.remove();
+          }, 100);
+          
+          resolve();
+        };
+        
+        (document.head || document.documentElement).appendChild(script);
+      } catch (error) {
+        console.error(`GDate2PDate: Error injecting ${fileName}:`, error);
+        reject(error);
+      }
+    });
+  }
+
+  /**
    * Inject the main conversion script into the page context
    * تزریق اسکریپت اصلی تبدیل به محیط صفحه
    */
-  function injectConversionScript() {
+  async function injectConversionScript() {
     if (scriptInjected) {
       console.log('GDate2PDate: Script already injected, skipping...');
       return;
     }
     
     try {
-      // Create script element
-      // ایجاد المان اسکریپت
-      const script = document.createElement('script');
-      script.src = chrome.runtime.getURL('script.js');
-      script.type = 'text/javascript';
-      script.id = 'gdate2pdate-converter';
-      
-      // Add error handling
-      // مدیریت خطا
-      script.onerror = function() {
-        console.error('GDate2PDate: Failed to load conversion script');
-        console.error('تبدیل تاریخ: خطا در بارگذاری اسکریپت تبدیل');
-        scriptInjected = false;
-      };
-      
-      script.onload = function() {
-        console.log('GDate2PDate: Conversion script loaded successfully');
+      // Inject scripts in order: config.js -> logger.js -> script.js
+      // تزریق اسکریپت‌ها به ترتیب: config.js -> logger.js -> script.js
+      await injectScript('config.js');
+      await injectScript('logger.js');
+      await injectScript('script.js', () => {
         console.log('تبدیل تاریخ: اسکریپت با موفقیت بارگذاری شد');
         scriptInjected = true;
-        
-        // Remove script tag after loading to keep DOM clean
-        // حذف تگ اسکریپت پس از بارگذاری برای تمیز نگه داشتن DOM
-        setTimeout(() => {
-          script.remove();
-        }, 100);
-      };
-      
-      // Inject into page
-      // تزریق به صفحه
-      (document.head || document.documentElement).appendChild(script);
+      });
       
     } catch (error) {
-      console.error('GDate2PDate: Error injecting script:', error);
-      console.error('تبدیل تاریخ: خطا در تزریق اسکریپت:', error);
+      console.error('GDate2PDate: Error injecting scripts:', error);
+      console.error('تبدیل تاریخ: خطا در تزریق اسکریپت‌ها:', error);
       scriptInjected = false;
     }
   }
