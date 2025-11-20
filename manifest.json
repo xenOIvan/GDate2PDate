@@ -46,7 +46,7 @@
   
   "web_accessible_resources": [
     {
-      "resources": ["script.js"],
+      "resources": ["config.js", "logger.js", "script.js"],
       "matches": ["<all_urls>"]
     }
   ],

@@ -6,6 +6,16 @@
 (function() {
   'use strict';
 
+  // Simple logging wrapper for popup
+  // حلقه‌بندی ساده لاگ‌گیری برای popup
+  const IS_DEV = false; // Set by build script
+  const log = {
+    debug: IS_DEV ? console.log.bind(console) : () => {},
+    info: IS_DEV ? console.info.bind(console) : () => {},
+    warn: IS_DEV ? console.warn.bind(console) : () => {},
+    error: console.error.bind(console) // Always log errors
+  };
+
   const toggleSwitch = document.getElementById('toggle-switch');
   const statusDot = document.getElementById('status-dot');
   const statusText = document.getElementById('status-text');
@@ -34,7 +44,7 @@
     chrome.storage.sync.get(['enabled'], function(result) {
       const enabled = result.enabled !== false; // Default to enabled
       updateUI(enabled);
-      console.log('GDate2PDate Popup: Current state:', enabled ? 'enabled' : 'disabled');
+      log.debug('GDate2PDate Popup: Current state:', enabled ? 'enabled' : 'disabled');
     });
   }
 
@@ -46,17 +56,17 @@
     const enabled = toggleSwitch.classList.contains('active');
     const newState = !enabled;
     
-    console.log('GDate2PDate Popup: Toggle changed to:', newState ? 'enabled' : 'disabled');
+    log.debug('GDate2PDate Popup: Toggle changed to:', newState ? 'enabled' : 'disabled');
     
     // Update storage
     // به‌روزرسانی ذخیره‌سازی
     chrome.storage.sync.set({ enabled: newState }, function() {
       if (chrome.runtime.lastError) {
-        console.error('GDate2PDate Popup: Error saving state:', chrome.runtime.lastError);
+        log.error('GDate2PDate Popup: Error saving state:', chrome.runtime.lastError);
         return;
       }
       
-      console.log('GDate2PDate Popup: State saved successfully');
+      log.debug('GDate2PDate Popup: State saved successfully');
       updateUI(newState);
       
       // Send message to background script
@@ -67,12 +77,12 @@
         reloadTabs: true
       }, function(response) {
         if (chrome.runtime.lastError) {
-          console.error('GDate2PDate Popup: Error sending message:', chrome.runtime.lastError);
+          log.error('GDate2PDate Popup: Error sending message:', chrome.runtime.lastError);
           return;
         }
         
         if (response && response.success) {
-          console.log('GDate2PDate Popup: Extension state updated and tabs reloading');
+          log.debug('GDate2PDate Popup: Extension state updated and tabs reloading');
           
           // Show a brief confirmation (optional)
           // نمایش تأیید کوتاه (اختیاری)
@@ -107,7 +117,7 @@
    * راه‌اندازی popup
    */
   function initialize() {
-    console.log('GDate2PDate Popup: Initializing...');
+    log.debug('GDate2PDate Popup: Initializing...');
     
     // Load current state
     // بارگذاری وضعیت فعلی
@@ -117,7 +127,7 @@
     // افزودن شنونده رویداد به سوئیچ
     toggleSwitch.addEventListener('click', handleToggle);
     
-    console.log('GDate2PDate Popup: Initialized successfully');
+    log.debug('GDate2PDate Popup: Initialized successfully');
   }
 
   // Initialize when DOM is ready
@@ -131,7 +141,7 @@
   // Handle errors
   // مدیریت خطاها
   window.addEventListener('error', function(event) {
-    console.error('GDate2PDate Popup: Error:', event.error);
+    log.error('GDate2PDate Popup: Error:', event.error);
   });
 
 })();
