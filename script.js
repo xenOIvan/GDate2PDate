@@ -347,6 +347,25 @@
         }
     }
 
+    // Allow "May" as a month only when it is near a number.
+    // Supported forms: "5 May", "May 5", "5May", "May5".
+    function isMayUsedAsMonth(text, offset, length) {
+        try {
+            if (!text || typeof text !== 'string') return false;
+
+            const left = text.substring(Math.max(0, offset - 2), offset);
+            const right = text.substring(offset + length, Math.min(text.length, offset + length + 2));
+
+            const hasNumberBefore = /\d$/.test(left) || /\d\s$/.test(left);
+            const hasNumberAfter = /^\d/.test(right) || /^\s\d/.test(right);
+
+            return hasNumberBefore || hasNumberAfter;
+        } catch (error) {
+            log.error('❌ isMayUsedAsMonth: Unexpected error', error, { text, offset, length });
+            return false;
+        }
+    }
+
     // تابع تشخیص فرمت رایج در کل صفحه
     // Detect the most common date format on the entire page
     function detectPageDateFormat() {
@@ -639,6 +658,11 @@
             // فقط اگر قبلاً با الگوهای دیگر جایگزین نشده باشد
             // Only if not already replaced by other patterns
             newText = newText.replace(standaloneMonthPattern, (match, offset, string) => {
+                // Disambiguate the word "may" from the month name.
+                if (match.toLowerCase() === 'may' && !isMayUsedAsMonth(newText, offset, match.length)) {
+                    return match;
+                }
+
                 // بررسی اینکه آیا این ماه قبلاً در یک تاریخ کامل پردازش شده یا نه
                 // Check if this month is not already part of a processed date
                 const before = newText.substring(Math.max(0, offset - 3), offset);
