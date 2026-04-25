@@ -1,6 +1,5 @@
 # Build directories
 build-dev/
-build-prod/
 
 # Node modules
 node_modules/
