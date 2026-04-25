@@ -361,7 +361,7 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) file for 
 ⭐ If this extension is useful for you, please give it a star!
 
 ```
-نسخه 1.1 | ساخته شده با 💚 در ایران
+نسخه 1.0.1 | ساخته شده با 💚 در ایران
 Auther: Mohammad Kani
 05.02.06
 ```
