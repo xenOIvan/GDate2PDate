@@ -1,6 +1,11 @@
 # Release Notes | یادداشت‌های انتشار
 
-## **Version 04.08.25** - November 16, 2025
+## **Version 05.02.06** - November 16, 2025
+
+### ✨ New Features
+- Fix `may` english word  problem to prevent confusion with `May` (5th month)
+
+## **Version 04.02.25** - November 16, 2025
 
 ### ✨ New Features
 - Automatically converts Gregorian dates to Jalali (Persian) format on any webpage
@@ -28,7 +33,7 @@
 
 ---
 
-## **نسخه 04.08.25** - ۲۶ آبان ۱۴۰۳
+## **نسخه 05.02.06** - ۲۶ آبان ۱۴۰۳
 
 ### ✨ ویژگی‌های جدید
 - تبدیل خودکار تاریخ‌های میلادی به شمسی در هر صفحه وب

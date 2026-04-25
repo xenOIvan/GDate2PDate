@@ -4,14 +4,17 @@
 
 ![Extension Icon](icons/icon128.png)
 
-**🔄 تبدیل خودکار تاریخ‌های میلادی به شمسی در هر صفحه وب**
+**تبدیل خودکار تاریخ‌های میلادی به شمسی در هر صفحه وب**
 
-**🔄 Automatic Gregorian to Jalali (Persian) Date Conversion on Any Webpage**
+**Automatic Gregorian to Jalali (Persian) Date Conversion on Any Webpage**
+
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore)
-[![Version](https://img.shields.io/badge/Version-04.08.25-success?style=for-the-badge)](https://github.com/yourusername/GDate2PDate)
+[![Version](https://img.shields.io/badge/Version-05.02.06-success?style=for-the-badge)](https://github.com/yourusername/GDate2PDate)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![Downloads](https://img.shields.io/badge/Downloads-1K+-brightgreen?style=for-the-badge)](https://chrome.google.com/webstore)
+
+**ساخته شده با ❤️ برای جامعه فارسی‌زبان**
 
 </div>
 
@@ -354,14 +357,14 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) file for 
 
 <div align="center">
 
-**ساخته شده با ❤️ برای جامعه فارسی‌زبان**
-
-**Made with ❤️ for the Persian-speaking community**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/GDate2PDate&type=Date)](https://star-history.com/#yourusername/GDate2PDate&Date)
-
 ⭐ اگر این افزونه برای شما مفید بود، لطفاً یک ستاره بدهید!  
 ⭐ If this extension is useful for you, please give it a star!
+
+```
+نسخه 1.1 | ساخته شده با 💚 در ایران
+Auther: Mohammad Kani
+05.02.06
+```
 
 [⬆ برگشت به بالا | Back to top](#gdate2pdate---تبدیل-تاریخ-میلادی-به-شمسی)
 
