@@ -173,6 +173,5 @@ If dates still don't convert on a specific page:
 
 ---
 
-**Version**: 1404.8.25 (feature/late-change-fix)
 **Date**: 2024-11-16
 **Status**: ✅ Fixed and Tested

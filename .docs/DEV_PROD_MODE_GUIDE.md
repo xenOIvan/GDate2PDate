@@ -48,7 +48,6 @@ Features / ویژگی‌ها:
 - Debug console messages / پیام‌های کنسول اشکال‌زدایی
 - Detailed conversion tracking / ردیابی تفصیلی تبدیل
 - Extension name: "... [DEV]" / نام افزونه: "... [DEV]"
-- Version: "1404.8.25-dev" / نسخه: "1404.8.25-dev"
 
 #### Production Build / ساخت تولید
 ```powershell

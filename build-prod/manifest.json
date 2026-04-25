@@ -1,8 +1,8 @@
 {
     "manifest_version":  3,
-    "name":  "GDate2PDate - Gregorian to Jalali Live WebPage Date Converter",
+    "name":  "GDate2PDate | Gregorian to Jalali on-page date converter",
     "name__fa":  "تبدیل تاریخ میلادی به شمسی",
-    "version":  "1404.8.25",
+    "version":  "1.1",
     "description":  "Chrome Extension Automatically Converts Gregorian dates to Jalali (Persian) dates | تبدیل خودکار تاریخ میلادی به شمسی در هر صفحه وب",
     "author":  "محمد کنی",
     "permissions":  [
